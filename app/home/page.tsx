@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/app/components/app-header";
+import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
+import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
 import { getCurrentSession } from "@/lib/session";
 import { getNewsPage } from "@/lib/news";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
@@ -30,13 +32,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   startNewsParserScheduler();
 
   const session = await getCurrentSession();
-  const params = await searchParams;
-  const currentPage = Number(params.page ?? "1");
-  const newsPage = await getNewsPage(currentPage, 10);
-
   if (!session) {
     redirect("/");
   }
+
+  const params = await searchParams;
+  const currentPage = Number(params.page ?? "1");
+  const newsPage = await getNewsPage(currentPage, 10, session.userId);
 
   return (
     <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white">
@@ -72,11 +74,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           <div className="text-sm text-white/65">{item.companyName}</div>
                           <div className="mt-1 text-xs text-white/60">{formatDate(item.datetime)}</div>
                         </div>
-                        <div className="flex flex-col items-start gap-1 sm:items-end sm:text-right">
-                          <div className="text-sm font-semibold text-white/90">{item.ticker}</div>
+                        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:max-w-[420px] sm:items-end sm:text-right">
+                          <div className="text-sm font-semibold text-white/90 sm:self-end">{item.ticker}</div>
                           <NewsPriceBefore newsId={item.id} />
+                          <TickerTradingViewLink ticker={item.ticker} />
                         </div>
                       </div>
+
+                      <NewsPredictPanel newsId={item.id} initialPredict={item.predict} />
 
                       <p className="text-white/90">{firstParagraph}</p>
 

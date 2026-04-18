@@ -2,6 +2,7 @@ import "server-only";
 
 import { spawn } from "node:child_process";
 
+import { closeExpectingPredicts } from "@/lib/predicts-processor";
 import { getProjectRoot } from "@/lib/project-root";
 
 declare global {
@@ -11,6 +12,8 @@ declare global {
 }
 
 const RUN_INTERVAL_MS = 60 * 1000;
+/** Отдельный цикл проверки предиктов (Задание 1): появились ли обе цены в файле по prices_path. */
+const PREDICTS_CHECK_INTERVAL_MS = 10 * 1000;
 
 function runNewsParser() {
   if (global.newsParserRunning) {
@@ -94,6 +97,7 @@ function runNewsPriceSync() {
     if (code === 0) {
       const normalized = stdout.trim();
       console.log("[news-prices-sync] completed:", normalized || "ok");
+      runPredictsCloser();
     } else {
       console.error("[news-prices-sync] failed:", {
         code,
@@ -103,6 +107,12 @@ function runNewsPriceSync() {
     }
 
     global.newsPriceSyncRunning = false;
+  });
+}
+
+function runPredictsCloser() {
+  void closeExpectingPredicts().catch((error: unknown) => {
+    console.error("[predicts-closer]", error);
   });
 }
 
@@ -117,8 +127,12 @@ export function startNewsParserScheduler() {
 
   runNewsParser();
   runNewsPriceSync();
+  runPredictsCloser();
   setInterval(() => {
     runNewsParser();
     runNewsPriceSync();
   }, RUN_INTERVAL_MS);
+  setInterval(() => {
+    runPredictsCloser();
+  }, PREDICTS_CHECK_INTERVAL_MS);
 }

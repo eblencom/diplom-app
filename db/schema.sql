@@ -24,3 +24,22 @@ CREATE TABLE IF NOT EXISTS news (
 
 CREATE INDEX IF NOT EXISTS idx_news_company_datetime
 ON news (company_id, datetime DESC);
+
+CREATE TABLE IF NOT EXISTS predicts (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  news_id BIGINT NOT NULL REFERENCES news(id) ON DELETE CASCADE,
+  prediction VARCHAR(20) NOT NULL DEFAULT 'positive'
+    CHECK (prediction IN ('positive', 'neutral', 'negative')),
+  result VARCHAR(20) NULL
+    CHECK (result IS NULL OR result IN ('win', 'neutral', 'lose')),
+  result_percent NUMERIC(14, 6) NULL,
+  status VARCHAR(20) NOT NULL DEFAULT 'expect'
+    CHECK (status IN ('expect', 'closed'))
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_predicts_user_news
+ON predicts (user_id, news_id);
+
+CREATE INDEX IF NOT EXISTS idx_predicts_status
+ON predicts (status);
