@@ -4,9 +4,11 @@ import { AppHeader } from "@/app/components/app-header";
 import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
+import { UserWinrateCard } from "@/app/components/user-winrate-card";
 import { getCurrentSession } from "@/lib/session";
 import { getNewsPage } from "@/lib/news";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
+import { getUserWinrateStats } from "@/lib/user-winrate";
 
 type HomePageProps = {
   searchParams: Promise<{
@@ -39,6 +41,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const params = await searchParams;
   const currentPage = Number(params.page ?? "1");
   const newsPage = await getNewsPage(currentPage, 10, session.userId);
+  const winrateInitial = await getUserWinrateStats(session.userId);
 
   return (
     <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white">
@@ -52,7 +55,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             режим).
           </p>
 
-          <div className="mt-8 space-y-4">
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+            <div className="space-y-4">
             {newsPage.items.length === 0 && (
               <div className="rounded-2xl border border-white/15 bg-black/20 p-5 text-white/70">
                 Пока нет новостей. После первого прохода парсера новости появятся
@@ -104,6 +108,11 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 })()}
               </article>
             ))}
+            </div>
+
+            <div className="lg:sticky lg:top-6">
+              <UserWinrateCard initial={winrateInitial} />
+            </div>
           </div>
 
           <div className="mt-8 flex items-center justify-between">

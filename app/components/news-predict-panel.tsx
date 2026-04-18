@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 
 import { PredictTwoPointChart } from "@/app/components/predict-two-point-chart";
+import { PREDICT_POLL_MAX_WAIT_MS } from "@/lib/price-after-lag";
 import type { UserPredictOnNews } from "@/lib/predicts-types";
 
 type Props = {
@@ -52,7 +53,7 @@ export function NewsPredictPanel({ newsId, initialPredict }: Props) {
     let cancelled = false;
     let timeoutId: number | undefined;
     const startedAt = Date.now();
-    const maxWaitMs = 45 * 60 * 1000;
+    const maxWaitMs = PREDICT_POLL_MAX_WAIT_MS;
 
     const tick = async () => {
       if (cancelled) {
@@ -142,7 +143,7 @@ export function NewsPredictPanel({ newsId, initialPredict }: Props) {
             className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
             aria-hidden
           />
-          Ожидание срока исполнения предсказания
+          Ожидание цены через 1 час после минуты новости (закрытие сделки)
         </div>
       </div>
     );

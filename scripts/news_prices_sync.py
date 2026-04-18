@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """
 Each run: walk all news rows, merge MOEX TQBR 1m candle closes into company prices JSON.
-Skips rows that already have price_before and price_after (when T+5m has passed).
+Skips rows that already have price_before and price_after (when T+lag has passed).
+
+Lag in minutes must match lib/price-after-lag.ts (PRICE_AFTER_LAG_MINUTES).
 """
 from __future__ import annotations
 
@@ -20,6 +22,9 @@ import requests
 from psycopg2.extras import RealDictCursor
 
 MSK = ZoneInfo("Europe/Moscow")
+
+# Вторая цена: закрытие минутной свечи, начинающейся в floor(время новости) + этот сдвиг.
+PRICE_AFTER_LAG_MINUTES = 60
 
 
 def get_project_root() -> Path:
@@ -166,7 +171,7 @@ def needs_price_sync(
     has_before = bool(existing and existing.get("price_before") is not None)
     has_after = bool(existing and existing.get("price_after") is not None)
     pub_msk = to_msk(row.published_at)
-    after_target = floor_minute(pub_msk) + timedelta(minutes=5)
+    after_target = floor_minute(pub_msk) + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
     can_have_after = now_msk >= after_target
     if has_before and (has_after or not can_have_after):
         return False
@@ -247,7 +252,7 @@ def main() -> int:
             for row in pending:
                 pub_msk = to_msk(row.published_at)
                 before_target = floor_minute(pub_msk)
-                after_target = before_target + timedelta(minutes=5)
+                after_target = before_target + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
                 bounds_from.append(before_target - timedelta(days=1))
                 bounds_till.append(after_target + timedelta(days=1))
 
@@ -269,7 +274,7 @@ def main() -> int:
                 existing = by_id.get(row.news_id)
                 pub_msk = to_msk(row.published_at)
                 before_target = floor_minute(pub_msk)
-                after_target = before_target + timedelta(minutes=5)
+                after_target = before_target + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
                 can_have_after = now_msk >= after_target
 
                 has_before = bool(existing and existing.get("price_before") is not None)

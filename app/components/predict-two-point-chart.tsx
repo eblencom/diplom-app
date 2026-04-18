@@ -3,7 +3,7 @@ type Props = {
   priceAfter: number;
 };
 
-/** Две точки: A = до новости, B = через 5 минут после минуты новости. */
+/** Две точки: A = до новости, B = через 1 час после минуты новости (MOEX 1m). */
 export function PredictTwoPointChart({ priceBefore, priceAfter }: Props) {
   const min = Math.min(priceBefore, priceAfter);
   const max = Math.max(priceBefore, priceAfter);
@@ -18,7 +18,7 @@ export function PredictTwoPointChart({ priceBefore, priceAfter }: Props) {
 
   return (
     <div className="mt-2 w-full max-w-[220px] rounded-lg border border-white/10 bg-black/30 p-2 sm:ml-auto">
-      <p className="mb-1 text-center text-[10px] text-white/50">A — до, B — после</p>
+      <p className="mb-1 text-center text-[10px] text-white/50">A — до, B — через 1 ч</p>
       <svg viewBox={`0 0 200 ${h + 18}`} className="mx-auto block w-full" role="img" aria-label="График двух цен">
         <line
           x1={x0}
