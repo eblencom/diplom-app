@@ -1,9 +1,9 @@
 import "server-only";
 
-import { readPricePairFromFile } from "@/lib/news-prices-file";
 import { sql } from "@/lib/db";
+import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
-import type { PredictionKind, UserPredictOnNews } from "@/lib/predicts-types";
+import type { UserPredictOnNews } from "@/lib/predicts-types";
 
 export type { UserPredictOnNews };
 
@@ -14,7 +14,7 @@ export type NewsItem = {
   companyId: number;
   companyName: string;
   ticker: string;
-  predict: UserPredictOnNews | null;
+  predicts: UserPredictOnNews[];
 };
 
 type NewsRow = {
@@ -27,14 +27,7 @@ type NewsRow = {
   prices_path: string | null;
 };
 
-type PredictRow = {
-  id: number | string;
-  news_id: number | string;
-  prediction: string;
-  status: string;
-  result: string | null;
-  result_percent: string | null;
-};
+type PredictRow = PredictRowFields & { news_id: number | string };
 
 type CountRow = {
   count: string;
@@ -100,7 +93,7 @@ export async function getNewsPage(
     return {
       items: baseItems.map(({ pricesPath: _pricesPath, ...item }) => ({
         ...item,
-        predict: null,
+        predicts: [],
       })),
       page: safePage,
       pageSize,
@@ -112,64 +105,41 @@ export async function getNewsPage(
   const newsIds = baseItems.map((i) => i.id);
   const predictResult = await sql<PredictRow>(
     `
-      SELECT id, news_id, prediction, status, result, result_percent
+      SELECT
+        id,
+        news_id,
+        prediction,
+        status,
+        result,
+        result_percent,
+        lag_minutes,
+        price_before,
+        price_after
       FROM predicts
       WHERE user_id = $1 AND news_id = ANY($2::bigint[])
+      ORDER BY id ASC
     `,
     [userId, newsIds],
   );
 
-  const predictByNews = new Map<number, PredictRow>();
+  const predictByNews = new Map<number, PredictRow[]>();
   for (const row of predictResult.rows) {
-    predictByNews.set(normalizeId(row.news_id), row);
+    const nid = normalizeId(row.news_id);
+    const list = predictByNews.get(nid) ?? [];
+    list.push(row);
+    predictByNews.set(nid, list);
   }
 
   const items: NewsItem[] = [];
 
   for (const row of baseItems) {
     const { pricesPath, ...rest } = row;
-    const p = predictByNews.get(rest.id);
-
-    if (!p) {
-      items.push({ ...rest, predict: null });
-      continue;
+    const rows = predictByNews.get(rest.id) ?? [];
+    const predicts: UserPredictOnNews[] = [];
+    for (const p of rows) {
+      predicts.push(await rowToUserPredictOnNews(p, pricesPath));
     }
-
-    const prediction = p.prediction as PredictionKind;
-    const status = p.status === "closed" ? "closed" : "expect";
-
-    if (status === "expect") {
-      items.push({
-        ...rest,
-        predict: {
-          id: normalizeId(p.id),
-          prediction,
-          status: "expect",
-          result: null,
-          resultPercent: null,
-          priceBefore: null,
-          priceAfter: null,
-        },
-      });
-      continue;
-    }
-
-    const pair = await readPricePairFromFile(pricesPath, rest.id);
-    items.push({
-      ...rest,
-      predict: {
-        id: normalizeId(p.id),
-        prediction,
-        status: "closed",
-        result: (p.result as UserPredictOnNews["result"]) ?? null,
-        resultPercent:
-          p.result_percent === null || p.result_percent === undefined
-            ? null
-            : Number(p.result_percent),
-        priceBefore: pair?.price_before ?? null,
-        priceAfter: pair?.price_after ?? null,
-      },
-    });
+    items.push({ ...rest, predicts });
   }
 
   return {

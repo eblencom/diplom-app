@@ -35,10 +35,14 @@ CREATE TABLE IF NOT EXISTS predicts (
     CHECK (result IS NULL OR result IN ('win', 'neutral', 'lose')),
   result_percent NUMERIC(14, 6) NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'expect'
-    CHECK (status IN ('expect', 'closed'))
+    CHECK (status IN ('expect', 'closed')),
+  lag_minutes INT NOT NULL DEFAULT 60
+    CHECK (lag_minutes >= 1 AND lag_minutes <= 1440),
+  price_before NUMERIC(14, 6) NULL,
+  price_after NUMERIC(14, 6) NULL
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS idx_predicts_user_news
+CREATE INDEX IF NOT EXISTS idx_predicts_user_news
 ON predicts (user_id, news_id);
 
 CREATE INDEX IF NOT EXISTS idx_predicts_status

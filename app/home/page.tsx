@@ -85,7 +85,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         </div>
                       </div>
 
-                      <NewsPredictPanel newsId={item.id} initialPredict={item.predict} />
+                      <NewsPredictPanel newsId={item.id} initialPredicts={item.predicts} />
 
                       <p className="text-white/90">{firstParagraph}</p>
 

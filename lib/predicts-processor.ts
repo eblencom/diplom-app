@@ -3,13 +3,11 @@ import "server-only";
 import { sql } from "@/lib/db";
 import { computePredictOutcome } from "@/lib/predicts-logic";
 import type { PredictionKind } from "@/lib/predicts-types";
-import { readPricePairFromFile } from "@/lib/news-prices-file";
-
 type ExpectRow = {
   id: string | number;
   prediction: string;
-  news_id: string | number;
-  prices_path: string | null;
+  price_before: string | number | null;
+  price_after: string | number | null;
 };
 
 function normalizeId(value: number | string) {
@@ -22,12 +20,12 @@ export async function closeExpectingPredicts(): Promise<number> {
       SELECT
         p.id,
         p.prediction,
-        p.news_id,
-        c.prices_path
+        p.price_before,
+        p.price_after
       FROM predicts p
-      INNER JOIN news n ON n.id = p.news_id
-      INNER JOIN companies c ON c.id = n.company_id
       WHERE p.status = 'expect'
+        AND p.price_before IS NOT NULL
+        AND p.price_after IS NOT NULL
     `,
   );
 
@@ -35,18 +33,28 @@ export async function closeExpectingPredicts(): Promise<number> {
 
   for (const row of result.rows) {
     const predictId = normalizeId(row.id);
-    const newsId = normalizeId(row.news_id);
     const prediction = row.prediction as PredictionKind;
 
-    const pair = await readPricePairFromFile(row.prices_path, newsId);
-    if (!pair) {
+    const before =
+      row.price_before === null || row.price_before === undefined
+        ? NaN
+        : typeof row.price_before === "number"
+          ? row.price_before
+          : Number(row.price_before);
+    const after =
+      row.price_after === null || row.price_after === undefined
+        ? NaN
+        : typeof row.price_after === "number"
+          ? row.price_after
+          : Number(row.price_after);
+    if (!Number.isFinite(before) || !Number.isFinite(after)) {
       continue;
     }
 
     const { result: outcome, resultPercent } = computePredictOutcome(
       prediction,
-      pair.price_before,
-      pair.price_after,
+      before,
+      after,
     );
 
     const updated = await sql(

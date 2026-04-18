@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """
-Each run: walk all news rows, merge MOEX TQBR 1m candle closes into company prices JSON.
-Skips rows that already have price_before and price_after (when T+lag has passed).
+MOEX TQBR 1m: для строк predicts в status=expect заполняет price_before и price_after
+по полю lag_minutes (минуты после минуты новости, MSK, floor).
 
-Lag in minutes must match lib/price-after-lag.ts (PRICE_AFTER_LAG_MINUTES).
+Дополнительно в JSON компании пишет price_before для новостей (для /api/news/:id/price),
+если в файле его ещё нет. price_after в JSON не используется для предсказаний.
 """
 from __future__ import annotations
 
 import json
 import os
-import sys
 from collections import defaultdict
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
@@ -22,9 +22,6 @@ import requests
 from psycopg2.extras import RealDictCursor
 
 MSK = ZoneInfo("Europe/Moscow")
-
-# Вторая цена: закрытие минутной свечи, начинающейся в floor(время новости) + этот сдвиг.
-PRICE_AFTER_LAG_MINUTES = 60
 
 
 def get_project_root() -> Path:
@@ -67,7 +64,6 @@ def floor_minute(dt: datetime) -> datetime:
 
 
 def moex_begin_to_dt(s: str) -> datetime:
-    # "2026-04-18 10:30:00" in MSK
     naive = datetime.strptime(s[:19], "%Y-%m-%d %H:%M:%S")
     return naive.replace(tzinfo=MSK)
 
@@ -123,7 +119,6 @@ def close_at_begin(candles: list[dict[str, Any]], target_begin: datetime) -> flo
     for c in candles:
         if c["begin"][:19] == key_s[:19]:
             return float(c["close"])
-    # fallback: last candle with begin <= target
     best: float | None = None
     for c in candles:
         b = moex_begin_to_dt(c["begin"])
@@ -163,19 +158,23 @@ class NewsRow:
     published_at: datetime
 
 
-def needs_price_sync(
-    row: NewsRow,
-    existing: dict[str, Any] | None,
-    now_msk: datetime,
-) -> bool:
-    has_before = bool(existing and existing.get("price_before") is not None)
-    has_after = bool(existing and existing.get("price_after") is not None)
-    pub_msk = to_msk(row.published_at)
-    after_target = floor_minute(pub_msk) + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
-    can_have_after = now_msk >= after_target
-    if has_before and (has_after or not can_have_after):
-        return False
-    return True
+@dataclass
+class PendingPredict:
+    predict_id: int
+    news_id: int
+    lag_minutes: int
+    published_at: datetime
+    price_before: float | None
+    price_after: float | None
+    company_id: int
+    ticker: str
+    prices_path: str | None
+
+
+def needs_json_price_before(existing: dict[str, Any] | None) -> bool:
+    if not existing:
+        return True
+    return existing.get("price_before") is None
 
 
 def main() -> int:
@@ -204,17 +203,79 @@ def main() -> int:
             )
             news_rows = [NewsRow(**dict(r)) for r in cur.fetchall()]
 
+            cur.execute(
+                """
+                SELECT p.id AS predict_id,
+                       p.news_id,
+                       p.lag_minutes,
+                       p.price_before,
+                       p.price_after,
+                       n.datetime AS published_at,
+                       n.company_id,
+                       c.ticker,
+                       c.prices_path
+                FROM predicts p
+                INNER JOIN news n ON n.id = p.news_id
+                INNER JOIN companies c ON c.id = n.company_id
+                WHERE p.status = 'expect'
+                  AND (p.price_before IS NULL OR p.price_after IS NULL)
+                """
+            )
+            pending_predicts_raw = cur.fetchall()
+
         now_msk = datetime.now(tz=MSK)
 
-        by_ticker: dict[str, list[NewsRow]] = defaultdict(list)
+        by_ticker_news: dict[str, list[NewsRow]] = defaultdict(list)
         for row in news_rows:
             ticker = (row.ticker or "").strip().upper()
             if ticker:
-                by_ticker[ticker].append(row)
+                by_ticker_news[ticker].append(row)
 
-        for ticker, ticker_rows in by_ticker.items():
-            company_id = ticker_rows[0].company_id
-            rel_path = (ticker_rows[0].prices_path or "").strip() or None
+        by_ticker_predicts: dict[str, list[PendingPredict]] = defaultdict(list)
+        for r in pending_predicts_raw:
+            ticker = (r.get("ticker") or "").strip().upper()
+            if not ticker:
+                continue
+            try:
+                lag = int(r["lag_minutes"])
+            except (TypeError, ValueError):
+                continue
+            by_ticker_predicts[ticker].append(
+                PendingPredict(
+                    predict_id=int(r["predict_id"]),
+                    news_id=int(r["news_id"]),
+                    lag_minutes=lag,
+                    published_at=r["published_at"],
+                    price_before=float(r["price_before"])
+                    if r.get("price_before") is not None
+                    else None,
+                    price_after=float(r["price_after"])
+                    if r.get("price_after") is not None
+                    else None,
+                    company_id=int(r["company_id"]),
+                    ticker=ticker,
+                    prices_path=r.get("prices_path"),
+                )
+            )
+
+        all_tickers = set(by_ticker_news.keys()) | set(by_ticker_predicts.keys())
+
+        for ticker in sorted(all_tickers):
+            ticker_news = by_ticker_news.get(ticker, [])
+            ticker_predicts = by_ticker_predicts.get(ticker, [])
+            if not ticker_news and not ticker_predicts:
+                continue
+
+            company_id = (
+                ticker_news[0].company_id
+                if ticker_news
+                else ticker_predicts[0].company_id
+            )
+            rel_path: str | None = None
+            if ticker_news:
+                rel_path = (ticker_news[0].prices_path or "").strip() or None
+            if not rel_path and ticker_predicts:
+                rel_path = (ticker_predicts[0].prices_path or "").strip() or None
             if not rel_path:
                 rel_path = default_prices_path(ticker)
                 with conn.cursor() as cur:
@@ -238,23 +299,28 @@ def main() -> int:
                     continue
                 by_id[nid_int] = it
 
-            pending: list[NewsRow] = []
-            for row in ticker_rows:
+            json_news_pending: list[NewsRow] = []
+            for row in ticker_news:
                 existing = by_id.get(row.news_id)
-                if needs_price_sync(row, existing, now_msk):
-                    pending.append(row)
+                if needs_json_price_before(existing):
+                    json_news_pending.append(row)
 
-            if not pending:
+            if not ticker_predicts and not json_news_pending:
                 continue
 
             bounds_from: list[datetime] = []
             bounds_till: list[datetime] = []
-            for row in pending:
-                pub_msk = to_msk(row.published_at)
+            for pp in ticker_predicts:
+                pub_msk = to_msk(pp.published_at)
                 before_target = floor_minute(pub_msk)
-                after_target = before_target + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
+                after_target = before_target + timedelta(minutes=pp.lag_minutes)
                 bounds_from.append(before_target - timedelta(days=1))
                 bounds_till.append(after_target + timedelta(days=1))
+            for row in json_news_pending:
+                pub_msk = to_msk(row.published_at)
+                before_target = floor_minute(pub_msk)
+                bounds_from.append(before_target - timedelta(days=1))
+                bounds_till.append(before_target + timedelta(days=1))
 
             day_from = min(bounds_from).date()
             day_till = max(bounds_till).date()
@@ -270,16 +336,75 @@ def main() -> int:
                 continue
 
             file_changed = False
-            for row in pending:
-                existing = by_id.get(row.news_id)
-                pub_msk = to_msk(row.published_at)
+
+            for pp in ticker_predicts:
+                pub_msk = to_msk(pp.published_at)
                 before_target = floor_minute(pub_msk)
-                after_target = before_target + timedelta(minutes=PRICE_AFTER_LAG_MINUTES)
+                after_target = before_target + timedelta(minutes=pp.lag_minutes)
                 can_have_after = now_msk >= after_target
 
-                has_before = bool(existing and existing.get("price_before") is not None)
-                has_after = bool(existing and existing.get("price_after") is not None)
+                pb: float | None = pp.price_before
+                if pb is None:
+                    got = close_at_begin(candles, before_target)
+                    if got is not None:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """
+                                UPDATE predicts
+                                SET price_before = %s
+                                WHERE id = %s AND price_before IS NULL
+                                """,
+                                (got, pp.predict_id),
+                            )
+                        conn.commit()
+                        pb = got
+                        log(
+                            f"[news-prices-sync] predict id={pp.predict_id} {ticker} "
+                            f"news_id={pp.news_id} price_before={got}"
+                        )
 
+                if can_have_after and pp.price_after is None:
+                    pa = close_at_begin(candles, after_target)
+                    if pa is not None:
+                        with conn.cursor() as cur:
+                            cur.execute(
+                                """
+                                UPDATE predicts
+                                SET price_after = %s
+                                WHERE id = %s AND price_after IS NULL
+                                """,
+                                (pa, pp.predict_id),
+                            )
+                        conn.commit()
+                        log(
+                            f"[news-prices-sync] predict id={pp.predict_id} {ticker} "
+                            f"news_id={pp.news_id} price_after={pa} (lag={pp.lag_minutes}m)"
+                        )
+
+                if pb is not None:
+                    existing = by_id.get(pp.news_id)
+                    entry = dict(existing) if existing else {
+                        "news_id": pp.news_id,
+                        "news_datetime": pub_msk.isoformat(),
+                        "price_before": None,
+                        "price_after": None,
+                    }
+                    entry["news_id"] = pp.news_id
+                    entry.setdefault("news_datetime", pub_msk.isoformat())
+                    if entry.get("price_before") is None:
+                        entry["price_before"] = pb
+                        by_id[pp.news_id] = entry
+                        file_changed = True
+
+            for row in json_news_pending:
+                existing = by_id.get(row.news_id)
+                if not needs_json_price_before(existing):
+                    continue
+                pub_msk = to_msk(row.published_at)
+                before_target = floor_minute(pub_msk)
+                got = close_at_begin(candles, before_target)
+                if got is None:
+                    continue
                 entry = dict(existing) if existing else {
                     "news_id": row.news_id,
                     "news_datetime": pub_msk.isoformat(),
@@ -288,28 +413,12 @@ def main() -> int:
                 }
                 entry["news_id"] = row.news_id
                 entry.setdefault("news_datetime", pub_msk.isoformat())
-
-                changed = False
-                if not has_before:
-                    pb = close_at_begin(candles, before_target)
-                    if pb is not None:
-                        entry["price_before"] = pb
-                        changed = True
-
-                if can_have_after and not has_after:
-                    pa = close_at_begin(candles, after_target)
-                    if pa is not None:
-                        entry["price_after"] = pa
-                        changed = True
-
-                if not changed:
-                    continue
-
+                entry["price_before"] = got
                 by_id[row.news_id] = entry
                 file_changed = True
                 log(
-                    f"[news-prices-sync] updated {ticker} news_id={row.news_id} "
-                    f"price_before={entry.get('price_before')} price_after={entry.get('price_after')}"
+                    f"[news-prices-sync] json {ticker} news_id={row.news_id} "
+                    f"price_before={got}"
                 )
 
             if file_changed:

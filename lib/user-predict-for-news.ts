@@ -1,76 +1,41 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
-import { readPricePairFromFile } from "@/lib/news-prices-file";
-import type { PredictionKind, UserPredictOnNews } from "@/lib/predicts-types";
+import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
+import type { UserPredictOnNews } from "@/lib/predicts-types";
 
-type Row = {
-  id: string | number;
-  prediction: string;
-  status: string;
-  result: string | null;
-  result_percent: string | null;
-  prices_path: string | null;
-};
+type Row = PredictRowFields & { prices_path: string | null };
 
-function normalizeId(value: number | string) {
-  return typeof value === "number" ? value : Number(value);
-}
-
-export async function getUserPredictSnapshotForNews(
+export async function getUserPredictsForNews(
   userId: number,
   newsId: number,
-): Promise<UserPredictOnNews | null> {
+): Promise<UserPredictOnNews[]> {
   const result = await sql<Row>(
     `
       SELECT
         p.id,
+        p.news_id,
         p.prediction,
         p.status,
         p.result,
         p.result_percent,
+        p.lag_minutes,
+        p.price_before,
+        p.price_after,
         c.prices_path
       FROM predicts p
       INNER JOIN news n ON n.id = p.news_id
       INNER JOIN companies c ON c.id = n.company_id
       WHERE p.user_id = $1 AND p.news_id = $2
-      LIMIT 1
+      ORDER BY p.id DESC
     `,
     [userId, newsId],
   );
 
-  const p = result.rows[0];
-  if (!p) {
-    return null;
+  const out: UserPredictOnNews[] = [];
+  for (const p of result.rows) {
+    const { prices_path: pricesPath, ...rest } = p;
+    out.push(await rowToUserPredictOnNews(rest, pricesPath));
   }
-
-  const prediction = p.prediction as PredictionKind;
-  const status = p.status === "closed" ? "closed" : "expect";
-
-  if (status === "expect") {
-    return {
-      id: normalizeId(p.id),
-      prediction,
-      status: "expect",
-      result: null,
-      resultPercent: null,
-      priceBefore: null,
-      priceAfter: null,
-    };
-  }
-
-  const pair = await readPricePairFromFile(p.prices_path, newsId);
-
-  return {
-    id: normalizeId(p.id),
-    prediction,
-    status: "closed",
-    result: (p.result as UserPredictOnNews["result"]) ?? null,
-    resultPercent:
-      p.result_percent === null || p.result_percent === undefined
-        ? null
-        : Number(p.result_percent),
-    priceBefore: pair?.price_before ?? null,
-    priceAfter: pair?.price_after ?? null,
-  };
+  return out;
 }

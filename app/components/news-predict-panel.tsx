@@ -1,14 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { PredictTwoPointChart } from "@/app/components/predict-two-point-chart";
-import { PREDICT_POLL_MAX_WAIT_MS } from "@/lib/price-after-lag";
+import {
+  DEFAULT_LAG_MINUTES,
+  LAG_PRESETS,
+  PREDICT_CLIENT_POLL_MS,
+  predictPollMaxWaitMs,
+} from "@/lib/predict-lag";
 import type { UserPredictOnNews } from "@/lib/predicts-types";
 
 type Props = {
   newsId: number;
-  initialPredict: UserPredictOnNews | null;
+  initialPredicts: UserPredictOnNews[];
 };
 
 function predictionLabel(p: UserPredictOnNews["prediction"]) {
@@ -34,26 +39,63 @@ function resultLabel(result: UserPredictOnNews["result"]) {
   return null;
 }
 
-export function NewsPredictPanel({ newsId, initialPredict }: Props) {
-  const [predict, setPredict] = useState<UserPredictOnNews | null>(initialPredict);
+function formatWaitHorizon(lagMinutes: number) {
+  const m = Math.round(lagMinutes);
+  if (m >= 60 && m % 60 === 0) {
+    const h = m / 60;
+    return `${h} ч`;
+  }
+  return `${m} мин`;
+}
+
+export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
+  const [predicts, setPredicts] = useState<UserPredictOnNews[]>(initialPredicts);
+  const [lagMinutes, setLagMinutes] = useState(DEFAULT_LAG_MINUTES);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (initialPredict !== null) {
-      setPredict(initialPredict);
+  const usedLags = useMemo(() => {
+    const s = new Set<number>();
+    for (const p of predicts) {
+      s.add(Math.round(p.lagMinutes));
     }
-  }, [initialPredict]);
+    return s;
+  }, [predicts]);
+
+  const canAddMore = LAG_PRESETS.some((m) => !usedLags.has(m));
 
   useEffect(() => {
-    if (!predict || predict.status !== "expect") {
+    setPredicts(initialPredicts);
+  }, [initialPredicts]);
+
+  useEffect(() => {
+    if (!usedLags.has(lagMinutes)) {
+      return;
+    }
+    const next = LAG_PRESETS.find((m) => !usedLags.has(m));
+    if (next !== undefined) {
+      setLagMinutes(next);
+    }
+  }, [usedLags, lagMinutes]);
+
+  const expectIdsKey = useMemo(() => {
+    return predicts
+      .filter((p) => p.status === "expect")
+      .map((p) => p.id)
+      .sort()
+      .join(",");
+  }, [predicts]);
+
+  useEffect(() => {
+    const expecting = predicts.filter((p) => p.status === "expect");
+    if (expecting.length === 0) {
       return;
     }
 
     let cancelled = false;
     let timeoutId: number | undefined;
     const startedAt = Date.now();
-    const maxWaitMs = PREDICT_POLL_MAX_WAIT_MS;
+    const maxWaitMs = Math.max(...expecting.map((p) => predictPollMaxWaitMs(p.lagMinutes)));
 
     const tick = async () => {
       if (cancelled) {
@@ -69,20 +111,22 @@ export function NewsPredictPanel({ newsId, initialPredict }: Props) {
           cache: "no-store",
         });
         if (!response.ok) {
-          timeoutId = window.setTimeout(() => void tick(), 2000);
+          timeoutId = window.setTimeout(() => void tick(), PREDICT_CLIENT_POLL_MS);
           return;
         }
-        const payload = (await response.json()) as { predict: UserPredictOnNews | null };
-        const next = payload.predict;
-        if (next?.status === "closed") {
-          setPredict(next);
-          return;
+        const payload = (await response.json()) as { predicts?: UserPredictOnNews[] };
+        const next = payload.predicts;
+        if (Array.isArray(next)) {
+          setPredicts(next);
+          if (!next.some((p) => p.status === "expect")) {
+            return;
+          }
         }
       } catch {
         // сеть / временные ошибки
       }
 
-      timeoutId = window.setTimeout(() => void tick(), 2000);
+      timeoutId = window.setTimeout(() => void tick(), PREDICT_CLIENT_POLL_MS);
     };
 
     void tick();
@@ -93,98 +137,174 @@ export function NewsPredictPanel({ newsId, initialPredict }: Props) {
         window.clearTimeout(timeoutId);
       }
     };
-  }, [newsId, predict?.id, predict?.status]);
+  }, [newsId, expectIdsKey]);
 
-  if (!predict) {
-    return (
-      <div className="mt-3 border-t border-white/10 pt-3">
-        <button
-          type="button"
-          disabled={busy}
-          onClick={async () => {
-            setBusy(true);
-            setError(null);
-            try {
-              const response = await fetch(`/api/news/${newsId}/predict`, {
-                method: "POST",
-                credentials: "include",
-              });
-              if (!response.ok) {
-                setError("Не удалось сохранить предсказание");
-                return;
-              }
-              const payload = (await response.json()) as { predict: UserPredictOnNews | null };
-              if (payload.predict) {
-                setPredict(payload.predict);
-              }
-            } catch {
-              setError("Ошибка сети");
-            } finally {
-              setBusy(false);
-            }
-          }}
-          className="rounded-full border border-violet-400/50 bg-violet-500/20 px-4 py-1.5 text-sm text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-50"
-        >
-          {busy ? "Сохранение…" : "Предсказать"}
-        </button>
-        {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
-      </div>
-    );
-  }
+  const onAddPredict = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const response = await fetch(`/api/news/${newsId}/predict`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ lagMinutes }),
+      });
+      if (response.status === 409) {
+        setError("Уже есть предсказание с этим горизонтом");
+        return;
+      }
+      if (response.status === 400) {
+        setError("Недопустимый горизонт");
+        return;
+      }
+      if (!response.ok) {
+        setError("Не удалось сохранить предсказание");
+        return;
+      }
+      const payload = (await response.json()) as { predicts?: UserPredictOnNews[] };
+      if (Array.isArray(payload.predicts)) {
+        setPredicts(payload.predicts);
+      }
+    } catch {
+      setError("Ошибка сети");
+    } finally {
+      setBusy(false);
+    }
+  };
 
-  if (predict.status === "expect") {
-    return (
-      <div className="mt-3 border-t border-white/10 pt-3">
-        <p className="text-sm text-white/85">
-          Предсказание: <span className="font-medium text-white">{predictionLabel(predict.prediction)}</span>
-        </p>
-        <div className="mt-2 inline-flex items-center gap-2 text-xs text-white/60">
-          <span
-            className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
-            aria-hidden
-          />
-          Ожидание цены через 1 час после минуты новости (закрытие сделки)
-        </div>
-      </div>
-    );
-  }
-
-  const outcomeText = resultLabel(predict.result);
-  const pct =
-    predict.resultPercent === null || predict.resultPercent === undefined
-      ? null
-      : `${predict.resultPercent > 0 ? "+" : ""}${predict.resultPercent.toFixed(2)}%`;
-
-  const hasPrices =
-    predict.priceBefore !== null &&
-    predict.priceAfter !== null &&
-    Number.isFinite(predict.priceBefore) &&
-    Number.isFinite(predict.priceAfter);
+  const onDelete = async (predictId: number) => {
+    setError(null);
+    try {
+      const response = await fetch(`/api/predicts/${predictId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (!response.ok) {
+        setError("Не удалось удалить");
+        return;
+      }
+      setPredicts((prev) => prev.filter((p) => p.id !== predictId));
+    } catch {
+      setError("Ошибка сети");
+    }
+  };
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-3 text-sm">
-      {outcomeText ? (
-        <p className="text-white/90">
-          Результат: <span className="font-semibold text-white">{outcomeText}</span>
-        </p>
-      ) : (
-        <p className="text-white/55">Предсказание нейтральное — итог «успех/неуспех» не применяется.</p>
-      )}
-
-      {pct !== null && (
-        <p className="mt-1 text-white/75">
-          Изменение цены: <span className="font-medium text-white">{pct}</span>
-        </p>
-      )}
-
-      {hasPrices && (
-        <>
-          <p className="mt-1 font-mono text-xs text-white/70">
-            {predict.priceBefore!.toFixed(2)} — {predict.priceAfter!.toFixed(2)}
+    <div className="mt-3 border-t border-white/10 pt-3">
+      <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+        <p className="text-xs font-medium text-white/70">Новое предсказание</p>
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
+          <label className="flex flex-col gap-1 text-xs text-white/60">
+            Горизонт
+            <select
+              value={lagMinutes}
+              onChange={(e) => setLagMinutes(Number(e.target.value))}
+              disabled={!canAddMore}
+              className="rounded-lg border border-white/20 bg-[#151046] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50"
+            >
+              {LAG_PRESETS.map((m) => (
+                <option key={m} value={m} disabled={usedLags.has(m)}>
+                  {m >= 60 && m % 60 === 0 ? `${m / 60} ч (${m} мин)` : `${m} мин`}
+                  {usedLags.has(m) ? " — уже есть" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            disabled={busy || !canAddMore || usedLags.has(lagMinutes)}
+            onClick={() => void onAddPredict()}
+            className="rounded-full border border-violet-400/50 bg-violet-500/20 px-4 py-2 text-sm text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-50 sm:ml-auto"
+          >
+            {busy ? "Сохранение…" : "Предсказать"}
+          </button>
+        </div>
+        {!canAddMore && (
+          <p className="text-[11px] text-white/45">
+            Все доступные горизонты уже использованы для этой новости. Удалите лишнее, чтобы
+            добавить снова.
           </p>
-          <PredictTwoPointChart priceBefore={predict.priceBefore!} priceAfter={predict.priceAfter!} />
-        </>
+        )}
+      </div>
+
+      {predicts.length > 0 && (
+        <ul className="mt-4 space-y-4">
+          {predicts.map((predict) => (
+            <li
+              key={predict.id}
+              className="rounded-xl border border-white/10 bg-black/15 p-3"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="text-sm text-white/85">
+                  <span className="text-white/55">Тональность: </span>
+                  <span className="font-medium text-white">{predictionLabel(predict.prediction)}</span>
+                  <span className="ml-2 text-xs text-white/45">
+                    · горизонт {formatWaitHorizon(predict.lagMinutes)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void onDelete(predict.id)}
+                  className="text-xs text-rose-300/90 underline-offset-2 hover:text-rose-200 hover:underline"
+                >
+                  Удалить
+                </button>
+              </div>
+
+              {predict.status === "expect" ? (
+                <div className="mt-2 inline-flex items-center gap-2 text-xs text-white/60">
+                  <span
+                    className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
+                    aria-hidden
+                  />
+                  Ожидание цены через {formatWaitHorizon(predict.lagMinutes)} после минуты новости
+                </div>
+              ) : (
+                <>
+                  {resultLabel(predict.result) ? (
+                    <p className="mt-2 text-sm text-white/90">
+                      Результат:{" "}
+                      <span className="font-semibold text-white">{resultLabel(predict.result)}</span>
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-white/55">
+                      Предсказание нейтральное — итог «успех/неуспех» не применяется.
+                    </p>
+                  )}
+
+                  {predict.resultPercent !== null && predict.resultPercent !== undefined && (
+                    <p className="mt-1 text-white/75">
+                      Изменение цены:{" "}
+                      <span className="font-medium text-white">
+                        {predict.resultPercent > 0 ? "+" : ""}
+                        {predict.resultPercent.toFixed(2)}%
+                      </span>
+                    </p>
+                  )}
+
+                  {predict.priceBefore !== null &&
+                    predict.priceAfter !== null &&
+                    Number.isFinite(predict.priceBefore) &&
+                    Number.isFinite(predict.priceAfter) && (
+                      <>
+                        <p className="mt-1 font-mono text-xs text-white/70">
+                          {predict.priceBefore.toFixed(2)} — {predict.priceAfter.toFixed(2)}
+                        </p>
+                        <PredictTwoPointChart
+                          priceBefore={predict.priceBefore}
+                          priceAfter={predict.priceAfter}
+                          lagMinutes={predict.lagMinutes}
+                        />
+                      </>
+                    )}
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
+
+      {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
     </div>
   );
 }

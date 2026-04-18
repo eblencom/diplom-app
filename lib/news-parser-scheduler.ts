@@ -11,9 +11,11 @@ declare global {
   var newsPriceSyncRunning: boolean | undefined;
 }
 
-const RUN_INTERVAL_MS = 60 * 1000;
-/** Отдельный цикл проверки предиктов (Задание 1): появились ли обе цены в файле по prices_path. */
-const PREDICTS_CHECK_INTERVAL_MS = 10 * 1000;
+const PARSER_INTERVAL_MS = 60 * 1000;
+/** Частое обновление котировок для открытых предсказаний (тяжелее парсер новостей). */
+const PRICE_SYNC_INTERVAL_MS = 8 * 1000;
+/** Закрытие предиктов сразу после появления обеих цен в БД. */
+const PREDICTS_CHECK_INTERVAL_MS = 3 * 1000;
 
 function runNewsParser() {
   if (global.newsParserRunning) {
@@ -130,8 +132,10 @@ export function startNewsParserScheduler() {
   runPredictsCloser();
   setInterval(() => {
     runNewsParser();
+  }, PARSER_INTERVAL_MS);
+  setInterval(() => {
     runNewsPriceSync();
-  }, RUN_INTERVAL_MS);
+  }, PRICE_SYNC_INTERVAL_MS);
   setInterval(() => {
     runPredictsCloser();
   }, PREDICTS_CHECK_INTERVAL_MS);

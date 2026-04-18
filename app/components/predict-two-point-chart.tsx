@@ -1,10 +1,24 @@
 type Props = {
   priceBefore: number;
   priceAfter: number;
+  /** Подпись к точке B (горизонт в минутах). */
+  lagMinutes?: number;
 };
 
-/** Две точки: A = до новости, B = через 1 час после минуты новости (MOEX 1m). */
-export function PredictTwoPointChart({ priceBefore, priceAfter }: Props) {
+function lagCaption(lagMinutes?: number) {
+  if (lagMinutes == null || !Number.isFinite(lagMinutes)) {
+    return "A — до, B — после";
+  }
+  const m = Math.round(lagMinutes);
+  if (m >= 60 && m % 60 === 0) {
+    const h = m / 60;
+    return `A — до, B — через ${h} ч`;
+  }
+  return `A — до, B — через ${m} мин`;
+}
+
+/** Две точки: A = цена в минуту новости, B = закрытие свечи через lagMinutes минут (MOEX 1m). */
+export function PredictTwoPointChart({ priceBefore, priceAfter, lagMinutes }: Props) {
   const min = Math.min(priceBefore, priceAfter);
   const max = Math.max(priceBefore, priceAfter);
   const span = max - min || 1;
@@ -18,7 +32,7 @@ export function PredictTwoPointChart({ priceBefore, priceAfter }: Props) {
 
   return (
     <div className="mt-2 w-full max-w-[220px] rounded-lg border border-white/10 bg-black/30 p-2 sm:ml-auto">
-      <p className="mb-1 text-center text-[10px] text-white/50">A — до, B — через 1 ч</p>
+      <p className="mb-1 text-center text-[10px] text-white/50">{lagCaption(lagMinutes)}</p>
       <svg viewBox={`0 0 200 ${h + 18}`} className="mx-auto block w-full" role="img" aria-label="График двух цен">
         <line
           x1={x0}
