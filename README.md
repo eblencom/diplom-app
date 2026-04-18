@@ -33,6 +33,8 @@ cp .env.example .env
 Then set values in `.env`:
 - `DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DB_NAME`
 - `SESSION_SECRET=long_random_secret_string`
+- `PYTHON_BIN=python` (or full path to Python)
+- `NEWS_PARSER_LOG_PATH=./news_parser_log.txt`
 
 Generate `SESSION_SECRET` example:
 
@@ -69,3 +71,45 @@ After next login, session will contain the updated role.
 - `password` - hash (not plain text)
 - `role` - `admin` or `analyst`
 - `tg_username` - currently stored as empty string by default
+
+## Companies and news tables
+
+`db/schema.sql` also creates:
+- `companies` (`name`, `ticker`, `news_link`, `price_link`, `prices_path`)
+- `news` (`company_id`, `text`, `datetime`) with `ON DELETE CASCADE`
+
+## News parser (Python)
+
+Install parser dependencies:
+
+```bash
+pip install -r scripts/requirements.txt
+```
+
+Parser file:
+- `scripts/news_parser.py`
+
+What parser does:
+- Reads all companies with non-empty `news_link`
+- Opens each company news page and parses links with class `article-title-link`
+- Opens each news page and extracts:
+  - publication datetime from `div.flex.flex-row.items-center > span` with text `Опубликовано ...`
+  - news text from the first `<p>` in `div.article_WYSIWYG__O0uhw.article_articlePage__UMz3q`
+- Saves only newer records compared to the latest news in DB for each company
+- Uses fallback baseline date `25.03.2026` if company has no news in DB
+- Writes run summary and saved items to `news_parser_log.txt` (or custom path from `NEWS_PARSER_LOG_PATH`)
+
+## Auto run every minute (test mode)
+
+The app starts background scheduler from server code and runs parser:
+- immediately after first request
+- then every 1 minute (temporarily for testing)
+
+Scheduler file:
+- `lib/news-parser-scheduler.ts`
+
+## News on home page
+
+Home page (`/home`) reads news from DB and shows:
+- latest news list
+- pagination with max `10` news per page
