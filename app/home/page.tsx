@@ -78,7 +78,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const queryBase = { companyId, category: categoryFilter };
 
   return (
-    <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white sm:px-6">
+    <main className="flex min-h-0 flex-1 flex-col bg-[#05021b] px-4 py-8 text-white sm:px-6">
       <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
 

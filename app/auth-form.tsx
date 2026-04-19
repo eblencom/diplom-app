@@ -5,7 +5,13 @@ import { useRouter } from "next/navigation";
 
 type Mode = "login" | "register";
 
-export function AuthForm() {
+type AuthFormProps = {
+  /** landing — компактная карточка в сетке лендинга */
+  variant?: "default" | "landing";
+  className?: string;
+};
+
+export function AuthForm({ variant = "default", className }: AuthFormProps = {}) {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("login");
   const [login, setLogin] = useState("");
@@ -57,9 +63,15 @@ export function AuthForm() {
     }
   }
 
+  const isLanding = variant === "landing";
+
+  const sectionClass = isLanding
+    ? "relative z-10 mx-auto w-full max-w-md rounded-2xl border border-white/20 bg-[#0c0824]/90 p-5 shadow-lg backdrop-blur-xl sm:p-6 lg:mx-0 lg:max-w-none"
+    : "relative z-10 mx-auto w-full max-w-xl rounded-3xl border border-white/15 bg-[#0f0a35]/80 p-7 shadow-[0_20px_80px_rgba(90,24,255,0.35)] backdrop-blur-xl";
+
   return (
-    <section className="relative z-10 mx-auto w-full max-w-xl rounded-3xl border border-white/15 bg-[#0f0a35]/80 p-7 shadow-[0_20px_80px_rgba(90,24,255,0.35)] backdrop-blur-xl">
-      <div className="mb-6 flex rounded-full border border-white/20 bg-black/25 p-1">
+    <section className={`${sectionClass}${className ? ` ${className}` : ""}`}>
+      <div className={`flex rounded-full border border-white/20 bg-black/25 p-1 ${isLanding ? "mb-4" : "mb-6"}`}>
         <button
           type="button"
           className={`w-1/2 rounded-full px-4 py-2 text-sm transition ${
@@ -84,12 +96,12 @@ export function AuthForm() {
         </button>
       </div>
 
-      <h2 className="text-3xl font-semibold text-white">{title}</h2>
-      <p className="mt-2 text-sm text-white/65">
-        Используйте логин и пароль для входа в систему.
+      <h2 className={`font-semibold text-white ${isLanding ? "text-2xl" : "text-3xl"}`}>{title}</h2>
+      <p className={`text-white/65 ${isLanding ? "mt-1.5 text-xs" : "mt-2 text-sm"}`}>
+        Логин и пароль — латиница, цифры и символ «_».
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+      <form onSubmit={handleSubmit} className={isLanding ? "mt-4 space-y-3" : "mt-6 space-y-4"}>
         <label className="block">
           <span className="mb-1 block text-sm text-white/75">Логин</span>
           <input
@@ -99,7 +111,7 @@ export function AuthForm() {
             pattern="[A-Za-z0-9_]+"
             value={login}
             onChange={(event) => setLogin(event.target.value)}
-            className="w-full rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2"
+            className={`w-full rounded-xl border border-white/20 bg-[#151046] text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2 ${isLanding ? "px-3 py-2.5 text-sm" : "px-4 py-3"}`}
             placeholder="ваш_логин"
           />
         </label>
@@ -112,7 +124,7 @@ export function AuthForm() {
             minLength={6}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
-            className="w-full rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2"
+            className={`w-full rounded-xl border border-white/20 bg-[#151046] text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2 ${isLanding ? "px-3 py-2.5 text-sm" : "px-4 py-3"}`}
             placeholder="********"
           />
         </label>
@@ -128,7 +140,7 @@ export function AuthForm() {
               minLength={6}
               value={confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
-              className="w-full rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2"
+              className={`w-full rounded-xl border border-white/20 bg-[#151046] text-white outline-none ring-violet-500/50 placeholder:text-white/30 focus:ring-2 ${isLanding ? "px-3 py-2.5 text-sm" : "px-4 py-3"}`}
               placeholder="********"
             />
           </label>
@@ -143,7 +155,7 @@ export function AuthForm() {
         <button
           disabled={pending}
           type="submit"
-          className="w-full rounded-full border border-white/50 bg-white px-5 py-3 text-sm font-semibold text-[#16153d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className={`w-full rounded-full border border-white/50 bg-white font-semibold text-[#16153d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 ${isLanding ? "px-4 py-2.5 text-sm" : "px-5 py-3 text-sm"}`}
         >
           {pending ? "Подождите..." : submitLabel}
         </button>

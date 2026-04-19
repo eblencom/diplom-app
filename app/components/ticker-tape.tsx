@@ -6,7 +6,12 @@ type Item = { ticker: string; name: string; price: string; source: string };
 
 const POLL_MS = 20_000;
 
-export function TickerTape() {
+type TickerTapeProps = {
+  /** Доп. классы корневого блока (например отступы на лендинге) */
+  className?: string;
+};
+
+export function TickerTape({ className }: TickerTapeProps) {
   const [items, setItems] = useState<Item[]>([]);
   const [error, setError] = useState<string | null>(null);
 
@@ -33,15 +38,19 @@ export function TickerTape() {
     return () => window.clearInterval(id);
   }, [load]);
 
+  const extra = className?.trim() ? ` ${className.trim()}` : "";
+
   if (items.length === 0 && !error) {
     return (
-      <div className="mb-4 h-11 w-full animate-pulse rounded-lg bg-white/5" aria-hidden />
+      <div className={`mb-4 h-11 w-full animate-pulse rounded-lg bg-white/5${extra}`} aria-hidden />
     );
   }
 
   if (items.length === 0 && error) {
     return (
-      <div className="mb-4 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-center text-xs text-white/50">
+      <div
+        className={`mb-4 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-center text-xs text-white/50${extra}`}
+      >
         Котировки: {error}
       </div>
     );
@@ -50,7 +59,9 @@ export function TickerTape() {
   const doubled = [...items, ...items];
 
   return (
-    <div className="mb-6 w-full overflow-hidden rounded-xl border border-emerald-500/25 bg-[#020818]/90 shadow-[inset_0_1px_0_rgba(52,211,153,0.15)]">
+    <div
+      className={`mb-6 w-full overflow-hidden rounded-xl border border-emerald-500/25 bg-[#020818]/90 shadow-[inset_0_1px_0_rgba(52,211,153,0.15)]${extra}`}
+    >
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-[10px] uppercase tracking-wider text-emerald-200/80">
         <span className="inline-block size-1.5 animate-pulse rounded-full bg-emerald-400" />
         Котировки (обновление ~20 с)
