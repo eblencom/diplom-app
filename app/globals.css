@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@keyframes ticker-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.ticker-marquee-track:hover {
+  animation-play-state: paused;
+}

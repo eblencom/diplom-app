@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/app/components/app-header";
 import { NewsHomeFilters } from "@/app/components/news-home-filters";
+import { TickerTape } from "@/app/components/ticker-tape";
 import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
@@ -79,6 +80,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white">
       <section className="mx-auto w-full max-w-6xl">
         <AppHeader login={session.login} role={session.role} />
+
+        <TickerTape />
 
         <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-8 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl">
           <h1 className="text-3xl font-semibold">Главная страница приложения</h1>

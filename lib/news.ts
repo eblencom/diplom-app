@@ -57,6 +57,22 @@ export type CompanyFilterRow = {
   ticker: string;
 };
 
+export type NewsPreviewPublic = {
+  id: number;
+  text: string;
+  datetime: Date;
+  companyName: string;
+  ticker: string;
+};
+
+type NewsPreviewRow = {
+  id: number | string;
+  text: string;
+  datetime: Date;
+  company_name: string;
+  ticker: string;
+};
+
 const DEFAULT_PAGE_SIZE = 10;
 
 function normalizeId(value: number | string) {
@@ -110,6 +126,31 @@ export async function getCompaniesForNewsFilter(): Promise<
   return result.rows.map((row) => ({
     id: normalizeId(row.id),
     name: row.name,
+    ticker: row.ticker,
+  }));
+}
+
+export async function getLatestNewsPreview(limit: number): Promise<NewsPreviewPublic[]> {
+  const safe = Math.min(50, Math.max(1, Math.round(limit)));
+  const result = await sql<NewsPreviewRow>(
+    `
+      SELECT n.id,
+             n.text,
+             n.datetime,
+             c.name AS company_name,
+             c.ticker
+      FROM news n
+      INNER JOIN companies c ON c.id = n.company_id
+      ORDER BY n.datetime DESC, n.id DESC
+      LIMIT $1
+    `,
+    [safe],
+  );
+  return result.rows.map((row) => ({
+    id: normalizeId(row.id),
+    text: row.text,
+    datetime: new Date(row.datetime),
+    companyName: row.company_name,
     ticker: row.ticker,
   }));
 }

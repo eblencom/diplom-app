@@ -53,7 +53,11 @@ export function NewsHomeFilters({ companies }: Props) {
   const onCompanyChange = useCallback(
     (value: string) => {
       startTransition(() => {
-        pushFilteredHome(router, searchParams, { company: value });
+        if (value !== "") {
+          pushFilteredHome(router, searchParams, { company: value, category: "" });
+        } else {
+          pushFilteredHome(router, searchParams, { company: "" });
+        }
       });
     },
     [router, searchParams],
@@ -62,7 +66,11 @@ export function NewsHomeFilters({ companies }: Props) {
   const onCategoryChange = useCallback(
     (value: string) => {
       startTransition(() => {
-        pushFilteredHome(router, searchParams, { category: value });
+        if (value !== "") {
+          pushFilteredHome(router, searchParams, { company: "", category: value });
+        } else {
+          pushFilteredHome(router, searchParams, { category: "" });
+        }
       });
     },
     [router, searchParams],
