@@ -1,18 +1,24 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/app/components/app-header";
+import { NewsHomeFilters } from "@/app/components/news-home-filters";
 import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
 import { UserWinrateCard } from "@/app/components/user-winrate-card";
+import { categoryLabelsForTicker, isCategorySlug } from "@/lib/company-categories";
+import { buildHomeNewsQuery } from "@/lib/home-news-query";
+import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
 import { getCurrentSession } from "@/lib/session";
-import { getNewsPage } from "@/lib/news";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
 import { getUserWinrateStats } from "@/lib/user-winrate";
 
 type HomePageProps = {
   searchParams: Promise<{
     page?: string;
+    company?: string;
+    category?: string;
   }>;
 };
 
@@ -40,8 +46,34 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const params = await searchParams;
   const currentPage = Number(params.page ?? "1");
-  const newsPage = await getNewsPage(currentPage, 10, session.userId);
-  const winrateInitial = await getUserWinrateStats(session.userId);
+
+  const companyRaw = params.company?.trim() ?? "";
+  let companyId: number | undefined;
+  if (/^\d+$/.test(companyRaw)) {
+    const parsed = Number(companyRaw);
+    if (parsed > 0) {
+      companyId = parsed;
+    }
+  }
+
+  const categoryRaw = params.category?.trim() ?? "";
+  const categoryFilter = isCategorySlug(categoryRaw) ? categoryRaw : undefined;
+
+  const listFilters =
+    companyId != null || categoryFilter != null
+      ? {
+          ...(companyId != null ? { companyId } : {}),
+          ...(categoryFilter != null ? { category: categoryFilter } : {}),
+        }
+      : undefined;
+
+  const [newsPage, companies, winrateInitial] = await Promise.all([
+    getNewsPage(currentPage, 10, session.userId, listFilters),
+    getCompaniesForNewsFilter(),
+    getUserWinrateStats(session.userId),
+  ]);
+
+  const queryBase = { companyId, category: categoryFilter };
 
   return (
     <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white">
@@ -54,6 +86,14 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             Новости обновляются парсером автоматически каждую минуту (тестовый
             режим).
           </p>
+
+          <Suspense
+            fallback={
+              <div className="mt-6 h-24 animate-pulse rounded-2xl bg-white/5" aria-hidden />
+            }
+          >
+            <NewsHomeFilters companies={companies} />
+          </Suspense>
 
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
             <div className="space-y-4">
@@ -73,6 +113,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   const paragraphs = splitParagraphs(item.text);
                   const firstParagraph = paragraphs[0] ?? item.text;
                   const restParagraphs = paragraphs.slice(1);
+                  const categoryTags = categoryLabelsForTicker(item.ticker);
 
                   return (
                     <>
@@ -80,6 +121,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <div>
                           <div className="text-sm text-white/65">{item.companyName}</div>
                           <div className="mt-1 text-xs text-white/60">{formatDate(item.datetime)}</div>
+                          {categoryTags.length > 0 && (
+                            <div className="mt-2 flex flex-wrap gap-1.5">
+                              {categoryTags.map((label) => (
+                                <span
+                                  key={label}
+                                  className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-100/90"
+                                >
+                                  {label}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                         <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:max-w-[420px] sm:items-end sm:text-right">
                           <div className="text-sm font-semibold text-white/90 sm:self-end">{item.ticker}</div>
@@ -124,7 +177,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </p>
             <div className="flex items-center gap-2">
               <Link
-                href={`/home?page=${Math.max(1, newsPage.page - 1)}`}
+                href={`/home${buildHomeNewsQuery({
+                  page: Math.max(1, newsPage.page - 1),
+                  ...queryBase,
+                })}`}
                 className={`rounded-full border px-4 py-2 text-sm transition ${
                   newsPage.page <= 1
                     ? "pointer-events-none border-white/15 text-white/40"
@@ -134,7 +190,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 Назад
               </Link>
               <Link
-                href={`/home?page=${Math.min(newsPage.totalPages, newsPage.page + 1)}`}
+                href={`/home${buildHomeNewsQuery({
+                  page: Math.min(newsPage.totalPages, newsPage.page + 1),
+                  ...queryBase,
+                })}`}
                 className={`rounded-full border px-4 py-2 text-sm transition ${
                   newsPage.page >= newsPage.totalPages
                     ? "pointer-events-none border-white/15 text-white/40"

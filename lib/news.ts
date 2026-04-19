@@ -1,6 +1,11 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
+import {
+  isCategorySlug,
+  tickersMatchingCategory,
+  type CategorySlug,
+} from "@/lib/company-categories";
 import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
 import type { UserPredictOnNews } from "@/lib/predicts-types";
@@ -41,24 +46,101 @@ export type NewsPageResult = {
   totalPages: number;
 };
 
+export type NewsListFilters = {
+  companyId?: number;
+  category?: CategorySlug;
+};
+
+export type CompanyFilterRow = {
+  id: number | string;
+  name: string;
+  ticker: string;
+};
+
 const DEFAULT_PAGE_SIZE = 10;
 
 function normalizeId(value: number | string) {
   return typeof value === "number" ? value : Number(value);
 }
 
+function buildNewsWhereClause(filters?: NewsListFilters): {
+  clause: string;
+  params: unknown[];
+  nextIndex: number;
+} {
+  const parts: string[] = [];
+  const params: unknown[] = [];
+  let idx = 1;
+
+  if (
+    filters?.companyId != null &&
+    Number.isFinite(filters.companyId) &&
+    filters.companyId > 0
+  ) {
+    parts.push(`n.company_id = $${idx}`);
+    params.push(filters.companyId);
+    idx += 1;
+  }
+
+  if (filters?.category != null && isCategorySlug(filters.category)) {
+    const tickers = tickersMatchingCategory(filters.category);
+    if (tickers.length === 0) {
+      parts.push("FALSE");
+    } else {
+      parts.push(`c.ticker = ANY($${idx}::text[])`);
+      params.push(tickers);
+      idx += 1;
+    }
+  }
+
+  const clause = parts.length > 0 ? `WHERE ${parts.join(" AND ")}` : "";
+  return { clause, params, nextIndex: idx };
+}
+
+export async function getCompaniesForNewsFilter(): Promise<
+  { id: number; name: string; ticker: string }[]
+> {
+  const result = await sql<CompanyFilterRow>(
+    `
+      SELECT id, name, ticker
+      FROM companies
+      ORDER BY name ASC
+    `,
+  );
+  return result.rows.map((row) => ({
+    id: normalizeId(row.id),
+    name: row.name,
+    ticker: row.ticker,
+  }));
+}
+
 export async function getNewsPage(
   pageInput: number,
   pageSize = DEFAULT_PAGE_SIZE,
   userId?: number,
+  filters?: NewsListFilters,
 ): Promise<NewsPageResult> {
   const page = Number.isFinite(pageInput) && pageInput > 0 ? pageInput : 1;
 
-  const countResult = await sql<CountRow>("SELECT COUNT(*)::text AS count FROM news");
+  const { clause, params: whereParams, nextIndex } = buildNewsWhereClause(filters);
+
+  const countResult = await sql<CountRow>(
+    `
+      SELECT COUNT(*)::text AS count
+      FROM news n
+      INNER JOIN companies c ON c.id = n.company_id
+      ${clause}
+    `,
+    whereParams,
+  );
   const totalItems = Number(countResult.rows[0]?.count ?? 0);
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const safePage = Math.min(page, totalPages);
   const offset = (safePage - 1) * pageSize;
+
+  const listParams = [...whereParams, pageSize, offset];
+  const limitPlaceholder = `$${nextIndex}`;
+  const offsetPlaceholder = `$${nextIndex + 1}`;
 
   const result = await sql<NewsRow>(
     `
@@ -72,11 +154,12 @@ export async function getNewsPage(
         c.prices_path
       FROM news n
       INNER JOIN companies c ON c.id = n.company_id
+      ${clause}
       ORDER BY n.datetime DESC, n.id DESC
-      LIMIT $1
-      OFFSET $2
+      LIMIT ${limitPlaceholder}
+      OFFSET ${offsetPlaceholder}
     `,
-    [pageSize, offset],
+    listParams,
   );
 
   const baseItems = result.rows.map((row) => ({
@@ -91,10 +174,14 @@ export async function getNewsPage(
 
   if (!userId || baseItems.length === 0) {
     return {
-      items: baseItems.map(({ pricesPath: _pricesPath, ...item }) => ({
-        ...item,
-        predicts: [],
-      })),
+      items: baseItems.map((row) => {
+        const { pricesPath, ...item } = row;
+        void pricesPath;
+        return {
+          ...item,
+          predicts: [],
+        };
+      }),
       page: safePage,
       pageSize,
       totalItems,
