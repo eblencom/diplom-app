@@ -1,13 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import type { jsPDF } from "jspdf";
 
 import { AdminUsersPanel } from "@/app/components/admin-users-panel";
 import { DashboardCharts } from "@/app/components/dashboard-charts";
 import { DashboardCompanyPredictBars } from "@/app/components/dashboard-company-predict-bars";
 import { WinLoseDonut } from "@/app/components/win-lose-donut";
-import type { DashboardStatsPayload } from "@/lib/dashboard-types";
+import { embedRobotoCyrillic } from "@/lib/dashboard-pdf-cyrillic";
+import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
+
+/** Строка пользователя для экспорта (совпадает с ответом GET /api/admin/users). */
+type AdminUserExportRow = {
+  id: number;
+  login: string;
+  role: "admin" | "analyst";
+  isBlocked: boolean;
+};
 
 const PANEL =
   "rounded-xl border border-white/15 bg-black/20 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]";
@@ -29,7 +39,7 @@ function formatPct01(x: number | null) {
   return `${(x * 100).toFixed(1)}%`;
 }
 
-async function buildWorkbook(data: DashboardStatsPayload) {
+async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUserExportRow[] | null) {
   const XLSX = await import("xlsx");
   const scopeLabel = data.scope === "all" ? "Все пользователи (админ)" : "Текущий пользователь";
   const lagLine =
@@ -64,23 +74,141 @@ async function buildWorkbook(data: DashboardStatsPayload) {
   const wsCo = XLSX.utils.aoa_to_sheet([companyHeader, ...companyBody]);
   XLSX.utils.book_append_sheet(wb, wsCo, "По компаниям");
 
+  if (data.scope === "all" && adminUsers != null) {
+    const uHead = ["ID", "Логин", "Роль", "Доступ"];
+    const uBody = adminUsers.map((u) => [
+      u.id,
+      u.login,
+      u.role === "admin" ? "Администратор" : "Аналитик",
+      u.isBlocked ? "Заблокирован" : "Активен",
+    ]);
+    const wsUsers = XLSX.utils.aoa_to_sheet([uHead, ...uBody]);
+    XLSX.utils.book_append_sheet(wb, wsUsers, "Пользователи");
+  }
+
   return wb;
 }
 
-async function exportXlsx(data: DashboardStatsPayload) {
+async function exportXlsx(data: DashboardStatsPayload, adminUsers?: AdminUserExportRow[] | null) {
   const XLSX = await import("xlsx");
-  const wb = await buildWorkbook(data);
+  const wb = await buildWorkbook(data, adminUsers);
   XLSX.writeFile(wb, `dashboard_${data.from}_${data.to}.xlsx`);
 }
 
-async function exportPdf(data: DashboardStatsPayload) {
+async function fetchAdminUsersForExport(
+  data: DashboardStatsPayload,
+  isAdmin: boolean,
+): Promise<AdminUserExportRow[] | null> {
+  if (!isAdmin || data.scope !== "all") {
+    return null;
+  }
+  const res = await fetch("/api/admin/users", { credentials: "include", cache: "no-store" });
+  if (!res.ok) {
+    return null;
+  }
+  const json = (await res.json()) as { users?: AdminUserExportRow[] };
+  return json.users ?? [];
+}
+
+function pdfWriteParagraph(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  yStart: number,
+  maxWidthMm: number,
+  lineHeightMm: number,
+): number {
+  let y = yStart;
+  const lines = doc.splitTextToSize(text, maxWidthMm);
+  for (const line of lines) {
+    if (y > 285) {
+      doc.addPage();
+      y = 12;
+    }
+    doc.text(line, x, y);
+    y += lineHeightMm;
+  }
+  return y;
+}
+
+/** Таблица «по дням» с выравниванием колонок (не pipe-текст). */
+function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]): number {
+  const left = 10;
+  const right = 200;
+  const rowH = 5;
+  const headerH = 6.5;
+  let y = yStart;
+
+  doc.setFontSize(10);
+  doc.setTextColor(28, 24, 52);
+  y = pdfWriteParagraph(doc, "По дням", left, y, right - left, 5.5);
+  y += 1;
+
+  const drawHeader = (hy: number) => {
+    doc.setFillColor(42, 36, 78);
+    doc.setDrawColor(100, 90, 150);
+    doc.setLineWidth(0.15);
+    doc.rect(left, hy - 5, right - left, headerH, "FD");
+    doc.setFontSize(8);
+    doc.setTextColor(245, 243, 255);
+    doc.text("Дата", left + 1.5, hy);
+    doc.text("Win %", 54, hy, { align: "right" });
+    doc.text("Пред.", 74, hy, { align: "right" });
+    doc.text("Нов.", 90, hy, { align: "right" });
+    doc.text("Σ % дня", 118, hy, { align: "right" });
+    doc.text("Накоп. %", right - 1.5, hy, { align: "right" });
+    doc.setTextColor(28, 24, 52);
+    doc.setFontSize(8);
+  };
+
+  drawHeader(y);
+  y += headerH + 0.5;
+
+  let rowIdx = 0;
+  for (const d of days) {
+    if (y > 278) {
+      doc.addPage();
+      y = 12;
+      drawHeader(y);
+      y += headerH + 0.5;
+      rowIdx = 0;
+    }
+
+    if (rowIdx % 2 === 0) {
+      doc.setFillColor(248, 246, 255);
+      doc.rect(left, y - 4.3, right - left, rowH, "F");
+    }
+
+    const wr =
+      d.winrate == null ? "—" : `${(d.winrate * 100).toFixed(1)}%`;
+    doc.text(d.date, left + 1.5, y);
+    doc.text(wr, 54, y, { align: "right" });
+    doc.text(String(d.predictions), 74, y, { align: "right" });
+    doc.text(String(d.newsCount), 90, y, { align: "right" });
+    doc.text(d.sumResultPercent.toFixed(2), 118, y, { align: "right" });
+    doc.text(d.cumulativeResultPercent.toFixed(2), right - 1.5, y, { align: "right" });
+
+    doc.setDrawColor(220, 215, 240);
+    doc.setLineWidth(0.05);
+    doc.line(left, y + 1.1, right, y + 1.1);
+
+    y += rowH;
+    rowIdx += 1;
+  }
+
+  return y + 2;
+}
+
+async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExportRow[] | null) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+  await embedRobotoCyrillic(doc);
+
   const scopeLabel = data.scope === "all" ? "Все пользователи (админ)" : "Текущий пользователь";
   let y = 12;
   doc.setFontSize(14);
-  doc.text("DiplomApp — отчёт дашборда", 14, y);
-  y += 10;
+  y = pdfWriteParagraph(doc, "DiplomApp — отчёт дашборда", 14, y, 182, 7);
+  y += 3;
   doc.setFontSize(10);
   const lagPdf =
     data.bestProfitLag == null
@@ -94,46 +222,42 @@ async function exportPdf(data: DashboardStatsPayload) {
     `Σ result_percent: ${data.totalResultPercentSum}`,
     lagPdf,
     "",
-    "По дням: дата | winrate % | предсказаний | новостей | сумма % дня | накопит. %",
   ];
   for (const line of lines) {
-    doc.text(line, 14, y);
-    y += 5.5;
+    y = pdfWriteParagraph(doc, line, 14, y, 182, 5.5);
   }
   y += 2;
-  doc.setFontSize(8);
-  for (const d of data.days) {
-    const row = `${d.date} | ${d.winrate == null ? "—" : (d.winrate * 100).toFixed(1)}% | ${d.predictions} | ${d.newsCount} | ${d.sumResultPercent.toFixed(2)} | ${d.cumulativeResultPercent.toFixed(2)}`;
-    const split = doc.splitTextToSize(row, 182);
-    for (const t of split) {
-      if (y > 285) {
-        doc.addPage();
-        y = 12;
-      }
-      doc.text(t, 14, y);
-      y += 4;
-    }
-  }
+  y = pdfDrawDailyTable(doc, y, data.days);
 
-  y += 6;
+  y += 4;
   if (y > 250) {
     doc.addPage();
     y = 12;
   }
   doc.setFontSize(10);
-  doc.text("Предсказания по компаниям (тикер)", 14, y);
-  y += 7;
+  y = pdfWriteParagraph(doc, "Предсказания по компаниям (тикер)", 14, y, 182, 6);
+  y += 1;
   doc.setFontSize(8);
   for (const c of data.companyPredictCounts ?? []) {
     const row = `${c.ticker} — ${c.name} — ${c.count}`;
-    const split = doc.splitTextToSize(row, 182);
-    for (const t of split) {
-      if (y > 285) {
-        doc.addPage();
-        y = 12;
-      }
-      doc.text(t, 14, y);
-      y += 4;
+    y = pdfWriteParagraph(doc, row, 14, y, 182, 4);
+  }
+
+  if (data.scope === "all" && adminUsers != null) {
+    y += 6;
+    if (y > 248) {
+      doc.addPage();
+      y = 12;
+    }
+    doc.setFontSize(10);
+    y = pdfWriteParagraph(doc, "Пользователи", 14, y, 182, 6);
+    y += 1;
+    doc.setFontSize(8);
+    for (const u of adminUsers) {
+      const roleRu = u.role === "admin" ? "админ" : "аналитик";
+      const access = u.isBlocked ? "заблокирован" : "активен";
+      const row = `${u.id} | ${u.login} | ${roleRu} | ${access}`;
+      y = pdfWriteParagraph(doc, row, 14, y, 182, 4);
     }
   }
 
@@ -193,10 +317,11 @@ export function DashboardClient({ isAdmin }: Props) {
       }
       setExporting(true);
       try {
+        const adminUsers = await fetchAdminUsersForExport(stats, isAdmin);
         if (kind === "xlsx") {
-          await exportXlsx(stats);
+          await exportXlsx(stats, adminUsers);
         } else {
-          await exportPdf(stats);
+          await exportPdf(stats, adminUsers);
         }
       } catch (e) {
         console.error(e);
@@ -205,7 +330,7 @@ export function DashboardClient({ isAdmin }: Props) {
         setExporting(false);
       }
     },
-    [stats],
+    [stats, isAdmin],
   );
 
   const animKey = `${from}|${to}|${stats?.win ?? 0}-${stats?.lose ?? 0}`;

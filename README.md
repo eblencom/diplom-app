@@ -20,7 +20,7 @@ Run schema from project root:
 psql -U postgres -d diplom_db -f db/schema.sql
 ```
 
-Если база уже создана раньше, примените новые миграции из `db/migration_*.sql` (например `migration_user_is_blocked.sql` для блокировки учётных записей).
+Если база уже создана раньше, примените новые миграции из `db/migration_*.sql` (например `migration_user_is_blocked.sql` для блокировки учётных записей, `migration_user_news_favorites.sql` для избранного в фильтре новостей).
 
 > If `psql` is not in PATH, run it using full path from your PostgreSQL installation.
 
@@ -52,6 +52,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000)
+
+Экспорт дашборда в PDF подключает шрифт **`public/fonts/Roboto-Regular.ttf`** (кириллица). Файл нужен в деплое; при отсутствии PDF может снова отображать текст некорректно.
 
 ## 4) Roles
 

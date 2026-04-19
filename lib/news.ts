@@ -6,6 +6,7 @@ import {
   tickersMatchingCategory,
   type CategorySlug,
 } from "@/lib/company-categories";
+import { getFavoritesWhereSql } from "@/lib/news-favorites";
 import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
 import type { UserPredictOnNews } from "@/lib/predicts-types";
@@ -49,6 +50,8 @@ export type NewsPageResult = {
 export type NewsListFilters = {
   companyId?: number;
   category?: CategorySlug;
+  /** Новости по любой из избранных компаний или категорий (нужен userId в getNewsPage). */
+  favoritesOnly?: boolean;
 };
 
 export type CompanyFilterRow = {
@@ -163,7 +166,27 @@ export async function getNewsPage(
 ): Promise<NewsPageResult> {
   const page = Number.isFinite(pageInput) && pageInput > 0 ? pageInput : 1;
 
-  const { clause, params: whereParams, nextIndex } = buildNewsWhereClause(filters);
+  let clause: string;
+  let whereParams: unknown[];
+  let nextIndex: number;
+
+  if (filters?.favoritesOnly === true) {
+    if (userId == null || !Number.isFinite(userId) || userId < 1) {
+      clause = "WHERE FALSE";
+      whereParams = [];
+      nextIndex = 1;
+    } else {
+      const fav = await getFavoritesWhereSql(userId);
+      clause = fav.clause;
+      whereParams = fav.params;
+      nextIndex = fav.nextIndex;
+    }
+  } else {
+    const built = buildNewsWhereClause(filters);
+    clause = built.clause;
+    whereParams = built.params;
+    nextIndex = built.nextIndex;
+  }
 
   const countResult = await sql<CountRow>(
     `

@@ -11,6 +11,10 @@ import { UserWinrateCard } from "@/app/components/user-winrate-card";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { categoryLabelsForTicker, isCategorySlug } from "@/lib/company-categories";
 import { buildHomeNewsQuery } from "@/lib/home-news-query";
+import {
+  getUserNewsFavoriteCategorySlugs,
+  getUserNewsFavoriteCompanyIds,
+} from "@/lib/news-favorites";
 import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
 import { getCurrentSession } from "@/lib/session";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
@@ -21,6 +25,7 @@ type HomePageProps = {
     page?: string;
     company?: string;
     category?: string;
+    favorites?: string;
   }>;
 };
 
@@ -61,21 +66,26 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const categoryRaw = params.category?.trim() ?? "";
   const categoryFilter = isCategorySlug(categoryRaw) ? categoryRaw : undefined;
 
-  const listFilters =
-    companyId != null || categoryFilter != null
+  const favRaw = params.favorites?.trim().toLowerCase() ?? "";
+  const favoritesOnly = favRaw === "1" || favRaw === "true" || favRaw === "yes";
+
+  const listFilters = favoritesOnly
+    ? { favoritesOnly: true as const }
+    : companyId != null || categoryFilter != null
       ? {
           ...(companyId != null ? { companyId } : {}),
           ...(categoryFilter != null ? { category: categoryFilter } : {}),
         }
       : undefined;
 
-  const [newsPage, companies, winrateInitial] = await Promise.all([
-    getNewsPage(currentPage, 10, session.userId, listFilters),
-    getCompaniesForNewsFilter(),
-    getUserWinrateStats(session.userId),
-  ]);
-
-  const queryBase = { companyId, category: categoryFilter };
+  const [newsPage, companies, winrateInitial, favoriteCompanyIds, favoriteCategories] =
+    await Promise.all([
+      getNewsPage(currentPage, 10, session.userId, listFilters),
+      getCompaniesForNewsFilter(),
+      getUserWinrateStats(session.userId),
+      getUserNewsFavoriteCompanyIds(session.userId),
+      getUserNewsFavoriteCategorySlugs(session.userId),
+    ]);
 
   return (
     <main className="flex min-h-0 flex-1 flex-col bg-[#05021b] px-4 py-8 text-white sm:px-6">
@@ -96,7 +106,12 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <div className="mt-6 h-24 animate-pulse rounded-2xl bg-white/5" aria-hidden />
             }
           >
-            <NewsHomeFilters companies={companies} />
+            <NewsHomeFilters
+              companies={companies}
+              favoriteCompanyIds={favoriteCompanyIds}
+              favoriteCategories={favoriteCategories}
+              favoritesFilterActive={favoritesOnly}
+            />
           </Suspense>
 
           <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
@@ -183,7 +198,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <Link
                 href={`/home${buildHomeNewsQuery({
                   page: Math.max(1, newsPage.page - 1),
-                  ...queryBase,
+                  favoritesOnly,
+                  companyId: favoritesOnly ? undefined : companyId,
+                  category: favoritesOnly ? undefined : categoryFilter,
                 })}`}
                 className={`rounded-full border px-4 py-2 text-sm transition ${
                   newsPage.page <= 1
@@ -196,7 +213,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
               <Link
                 href={`/home${buildHomeNewsQuery({
                   page: Math.min(newsPage.totalPages, newsPage.page + 1),
-                  ...queryBase,
+                  favoritesOnly,
+                  companyId: favoritesOnly ? undefined : companyId,
+                  category: favoritesOnly ? undefined : categoryFilter,
                 })}`}
                 className={`rounded-full border px-4 py-2 text-sm transition ${
                   newsPage.page >= newsPage.totalPages
