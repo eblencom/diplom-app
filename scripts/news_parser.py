@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
+"""
+Парсер новостей со страниц акций Investing (HTML).
+
+Investing отдаёт ленту и статьи через Cloudflare (страница «Just a moment…»).
+С «чистого» сервера или датацентрового IP часто не хватает cloudscraper/curl_cffi.
+
+Опционально: поднимите FlareSolverr локально и задайте URL API, например:
+  set FLARESOLVERR_URL=http://127.0.0.1:8191/v1
+Тогда запросы пойдут через браузер FlareSolverr и вернётся реальный HTML ленты/статьи.
+
+Прокси (если нужен резидентный IP): стандартные переменные HTTP_PROXY/HTTPS_PROXY
+подхватываются библиотекой requests / curl_cffi.
+"""
 import json
 import os
 import re
 import sys
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -110,9 +124,17 @@ def parse_datetime_from_article(soup: BeautifulSoup) -> datetime | None:
 
 
 def parse_text_from_article(soup: BeautifulSoup) -> str | None:
-    content = soup.select_one(
-        "div.article_WYSIWYG__O0uhw.article_articlePage__UMz3q"
+    selectors = (
+        "div.article_WYSIWYG__O0uhw.article_articlePage__UMz3q",
+        'div[class*="article_WYSIWYG"]',
+        'div[class*="article_articlePage"]',
+        "article div[data-testid='article-content']",
     )
+    content = None
+    for selector in selectors:
+        content = soup.select_one(selector)
+        if content is not None:
+            break
     if content is None:
         return None
 
@@ -147,18 +169,168 @@ def parse_text_from_article(soup: BeautifulSoup) -> str | None:
     return "\n\n".join(paragraphs)
 
 
-def fetch_html(url: str) -> BeautifulSoup | None:
+def _is_cloudflare_challenge(html: str) -> bool:
+    if not html:
+        return False
+    lowered = html.lower()
+    return (
+        "just a moment" in lowered
+        or "_cf_chl_opt" in html
+        or "cf-challenge" in lowered
+        or "checking your browser" in lowered
+    )
+
+
+def _fetch_delay_seconds() -> float:
+    raw = os.getenv("NEWS_PARSER_DELAY_MS", "").strip()
+    if not raw:
+        return 0.0
+    try:
+        return max(0.0, float(raw) / 1000.0)
+    except ValueError:
+        return 0.0
+
+
+def _sleep_between_requests() -> None:
+    delay = _fetch_delay_seconds()
+    if delay > 0:
+        time.sleep(delay)
+
+
+def fetch_html_via_flaresolverr(url: str) -> str | None:
+    endpoint = os.getenv("FLARESOLVERR_URL", "").strip()
+    if not endpoint:
+        return None
+
+    payload: dict[str, Any] = {
+        "cmd": "request.get",
+        "url": url,
+        "maxTimeout": int(os.getenv("FLARESOLVERR_MAX_TIMEOUT_MS", "120000")),
+    }
+    session_id = os.getenv("FLARESOLVERR_SESSION", "").strip()
+    if session_id:
+        payload["session"] = session_id
+
+    try:
+        response = requests.post(endpoint, json=payload, timeout=130)
+        response.raise_for_status()
+        data = response.json()
+    except (requests.RequestException, ValueError) as error:
+        write_log(f"FlareSolverr: ошибка запроса для {url}: {error}")
+        return None
+
+    if data.get("status") != "ok":
+        write_log(f"FlareSolverr: статус не ok для {url}: {data.get('message', data)}")
+        return None
+
+    solution = data.get("solution") or {}
+    html = str(solution.get("response") or "")
+    if not html.strip():
+        write_log(f"FlareSolverr: пустой ответ для {url}")
+        return None
+
+    if _is_cloudflare_challenge(html):
+        write_log(f"FlareSolverr: в ответе всё ещё страница challenge для {url}")
+        return None
+
+    return html
+
+
+def fetch_html_with_curl_cffi(url: str) -> str | None:
+    try:
+        from curl_cffi import requests as curl_requests
+    except ImportError:
+        return None
+
+    headers = {
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Referer": "https://ru.investing.com/",
+    }
+    impersonates = (
+        "chrome131",
+        "chrome124",
+        "chrome120",
+        "chrome110",
+    )
+    for impersonate in impersonates:
+        try:
+            response = curl_requests.get(
+                url,
+                impersonate=impersonate,
+                headers=headers,
+                timeout=35,
+            )
+            if response.status_code != 200:
+                body = response.text or ""
+                if _is_cloudflare_challenge(body):
+                    write_log(
+                        f"curl_cffi {impersonate}: HTTP {response.status_code} + "
+                        f"Cloudflare challenge для {url}"
+                    )
+                else:
+                    write_log(
+                        f"curl_cffi {impersonate}: HTTP {response.status_code} для {url}"
+                    )
+                continue
+            if _is_cloudflare_challenge(response.text):
+                write_log(
+                    f"curl_cffi {impersonate}: Cloudflare challenge (нужен "
+                    f"FLARESOLVERR_URL или другой IP) для {url}"
+                )
+                continue
+            return response.text
+        except Exception as error:
+            write_log(f"curl_cffi {impersonate} для {url}: {error}")
+    return None
+
+
+def fetch_html_with_cloudscraper(url: str) -> str | None:
     try:
         scraper = cloudscraper.create_scraper(
             browser={"browser": "chrome", "platform": "windows", "mobile": False}
         )
-        response = scraper.get(url, timeout=25)
+        response = scraper.get(
+            url,
+            timeout=35,
+            headers={
+                "Accept-Language": "ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7",
+                "Referer": "https://ru.investing.com/",
+            },
+        )
         response.raise_for_status()
     except requests.RequestException as error:
-        write_log(f"Ошибка загрузки URL {url}: {error}")
+        write_log(f"cloudscraper: ошибка загрузки {url}: {error}")
         return None
 
-    return BeautifulSoup(response.text, "html.parser")
+    if _is_cloudflare_challenge(response.text):
+        write_log(
+            "cloudscraper: ответ — страница Cloudflare challenge. "
+            "Задайте FLARESOLVERR_URL (FlareSolverr) или используйте резидентный "
+            f"прокси. URL: {url}"
+        )
+        return None
+
+    return response.text
+
+
+def fetch_html(url: str) -> BeautifulSoup | None:
+    _sleep_between_requests()
+
+    steps: list[tuple[str, Any]] = [
+        ("curl_cffi", fetch_html_with_curl_cffi),
+        ("cloudscraper", fetch_html_with_cloudscraper),
+    ]
+    if os.getenv("FLARESOLVERR_URL", "").strip():
+        steps.insert(0, ("FlareSolverr", fetch_html_via_flaresolverr))
+
+    for _label, getter in steps:
+        raw = getter(url)
+        if raw:
+            return BeautifulSoup(raw, "html.parser")
+
+    write_log(f"Не удалось получить HTML (все способы): {url}")
+    return None
 
 
 def next_page_url(url: str) -> str | None:
@@ -236,7 +408,9 @@ def collect_company_news(
             break
 
         link_nodes = listing_soup.select(
-            "a.article-title-link, a.block.text-base.font-bold.leading-5.hover\\:underline"
+            "a.article-title-link, "
+            "a.block.text-base.font-bold.leading-5.hover\\:underline, "
+            "a[href*='/news/'][href*='article-']"
         )
         if not link_nodes:
             break
