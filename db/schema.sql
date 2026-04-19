@@ -3,7 +3,8 @@ CREATE TABLE IF NOT EXISTS users (
   login VARCHAR(32) NOT NULL UNIQUE,
   password TEXT NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analyst')),
-  tg_username VARCHAR(255) NOT NULL DEFAULT ''
+  tg_username VARCHAR(255) NOT NULL DEFAULT '',
+  tg_chat_id BIGINT NULL
 );
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -47,3 +48,13 @@ ON predicts (user_id, news_id);
 
 CREATE INDEX IF NOT EXISTS idx_predicts_status
 ON predicts (status);
+
+CREATE TABLE IF NOT EXISTS user_ticker_alerts (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, company_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_ticker_alerts_user
+ON user_ticker_alerts (user_id);

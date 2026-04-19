@@ -8,6 +8,7 @@ import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
 import { UserWinrateCard } from "@/app/components/user-winrate-card";
+import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { categoryLabelsForTicker, isCategorySlug } from "@/lib/company-categories";
 import { buildHomeNewsQuery } from "@/lib/home-news-query";
 import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
@@ -77,8 +78,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const queryBase = { companyId, category: categoryFilter };
 
   return (
-    <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white">
-      <section className="mx-auto w-full max-w-6xl">
+    <main className="min-h-screen bg-[#05021b] px-4 py-8 text-white sm:px-6">
+      <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
 
         <TickerTape />
@@ -137,7 +138,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                             </div>
                           )}
                         </div>
-                        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:max-w-[420px] sm:items-end sm:text-right">
+                        <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:max-w-[520px] sm:items-end sm:text-right">
                           <div className="text-sm font-semibold text-white/90 sm:self-end">{item.ticker}</div>
                           <NewsPriceBefore newsId={item.id} />
                           <TickerTradingViewLink ticker={item.ticker} />

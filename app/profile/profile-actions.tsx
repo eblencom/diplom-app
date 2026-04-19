@@ -249,7 +249,7 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
         <p className="mt-1 text-sm text-red-100/85">
           Аккаунт будет полностью удален из базы данных.
         </p>
-        <div className="mt-4 max-w-md">
+        <div className="mt-4 max-w-xl">
           <input
             required
             type="password"

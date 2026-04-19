@@ -58,7 +58,7 @@ export function AuthForm() {
   }
 
   return (
-    <section className="relative z-10 mx-auto w-full max-w-md rounded-3xl border border-white/15 bg-[#0f0a35]/80 p-7 shadow-[0_20px_80px_rgba(90,24,255,0.35)] backdrop-blur-xl">
+    <section className="relative z-10 mx-auto w-full max-w-xl rounded-3xl border border-white/15 bg-[#0f0a35]/80 p-7 shadow-[0_20px_80px_rgba(90,24,255,0.35)] backdrop-blur-xl">
       <div className="mb-6 flex rounded-full border border-white/20 bg-black/25 p-1">
         <button
           type="button"
