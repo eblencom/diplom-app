@@ -216,9 +216,12 @@ export function ProfileTelegramPreferences({
             </span>
           </li>
           <li>
-            На сервере должен работать процесс бота (см.{" "}
-            <code className="rounded bg-black/40 px-1">scripts/tg_price_bot.cjs</code> и{" "}
-            <code className="rounded bg-black/40 px-1">TELEGRAM_BOT_TOKEN</code> в .env).
+            Для рассылки нужен <code className="rounded bg-black/40 px-1">TELEGRAM_BOT_TOKEN</code> в{" "}
+            <code className="rounded bg-black/40 px-1">.env</code>. При{" "}
+            <code className="rounded bg-black/40 px-1">npm run dev</code> бот стартует вместе с
+            Next.js; только сайт —{" "}
+            <code className="rounded bg-black/40 px-1">npm run dev:no-bot</code>. На проде можно{" "}
+            <code className="rounded bg-black/40 px-1">npm run tg-bot</code> или pm2 отдельно.
           </li>
         </ol>
       </div>

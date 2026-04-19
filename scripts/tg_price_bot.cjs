@@ -8,6 +8,11 @@
  *
  * Запуск из каталога diplom-app:
  *   node scripts/tg_price_bot.cjs
+ *   npm run tg-bot
+ * Вместе с Next (dev): по умолчанию `npm run dev` поднимает и сайт, и бота
+ * (см. package.json). Только сайт: `npm run dev:no-bot`.
+ * Если нет TELEGRAM_BOT_TOKEN или DATABASE_URL — процесс сразу выходит с кодом 0,
+ * чтобы не мешать `next dev`.
  *
  * Опционально в .env для ссылки на лендинге профиля:
  *   NEXT_PUBLIC_TELEGRAM_BOT_USERNAME=имя_бота_без_@
@@ -53,8 +58,11 @@ const DATABASE_URL = process.env.DATABASE_URL;
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
 
 if (!DATABASE_URL || !TELEGRAM_BOT_TOKEN) {
-  console.error("Нужны DATABASE_URL и TELEGRAM_BOT_TOKEN.");
-  process.exit(1);
+  console.warn(
+    "[tg-bot] Не заданы DATABASE_URL или TELEGRAM_BOT_TOKEN — бот не запускается. " +
+      "Добавьте их в .env или используйте npm run dev:no-bot (только Next.js).",
+  );
+  process.exit(0);
 }
 
 const pool = new Pool({ connectionString: DATABASE_URL });
