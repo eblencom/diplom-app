@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import { PredictTwoPointChart } from "@/app/components/predict-two-point-chart";
+import { PredictMinutePathChart } from "@/app/components/predict-minute-path-chart";
 import {
   DEFAULT_LAG_MINUTES,
   LAG_PRESETS,
@@ -232,7 +232,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
           {predicts.map((predict) => (
             <li
               key={predict.id}
-              className="rounded-xl border border-white/10 bg-black/15 p-3"
+              className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25 p-4 shadow-inner shadow-black/20"
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="text-sm text-white/85">
@@ -287,12 +287,11 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                     Number.isFinite(predict.priceBefore) &&
                     Number.isFinite(predict.priceAfter) && (
                       <>
-                        <p className="mt-1 font-mono text-xs text-white/70">
-                          {predict.priceBefore.toFixed(2)} — {predict.priceAfter.toFixed(2)}
+                        <p className="mt-2 font-mono text-xs text-white/70">
+                          Цена A — B: {predict.priceBefore.toFixed(2)} → {predict.priceAfter.toFixed(2)}
                         </p>
-                        <PredictTwoPointChart
-                          priceBefore={predict.priceBefore}
-                          priceAfter={predict.priceAfter}
+                        <PredictMinutePathChart
+                          predictId={predict.id}
                           lagMinutes={predict.lagMinutes}
                         />
                       </>

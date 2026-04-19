@@ -65,7 +65,10 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             )}
 
             {newsPage.items.map((item) => (
-              <article key={item.id} className="rounded-2xl border border-white/15 bg-black/20 p-5">
+              <article
+                key={item.id}
+                className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-[#10082c]/95 via-[#0a061f]/90 to-black/50 p-6 shadow-[0_12px_48px_rgba(34,211,238,0.06)]"
+              >
                 {(() => {
                   const paragraphs = splitParagraphs(item.text);
                   const firstParagraph = paragraphs[0] ?? item.text;
