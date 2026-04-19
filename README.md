@@ -20,6 +20,8 @@ Run schema from project root:
 psql -U postgres -d diplom_db -f db/schema.sql
 ```
 
+Если база уже создана раньше, примените новые миграции из `db/migration_*.sql` (например `migration_user_is_blocked.sql` для блокировки учётных записей).
+
 > If `psql` is not in PATH, run it using full path from your PostgreSQL installation.
 
 ## 2) Environment variables

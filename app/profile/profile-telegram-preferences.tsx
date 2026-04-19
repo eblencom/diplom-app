@@ -117,8 +117,9 @@ export function ProfileTelegramPreferences({
       <div>
         <h2 className="text-xl font-semibold text-white">Telegram</h2>
         <p className="mt-2 text-sm text-white/65">
-          Укажите ваш Telegram username (как в профиле Telegram, без @). Бот раз в минуту
-          пришлёт цены по выбранным ниже тикерам — после привязки чата.
+          Укажите ваш Telegram username (как в профиле Telegram, без @). После привязки чата бот
+          раз в минуту пришлёт цены MOEX по выбранным тикерам и раз в 10 минут — новости по ним
+          (если новых нет, придёт короткое уведомление).
         </p>
         {initialTgChatId != null ? (
           <p className="mt-2 text-sm font-medium text-emerald-300/90">
@@ -153,9 +154,10 @@ export function ProfileTelegramPreferences({
       </form>
 
       <form onSubmit={onSaveAlerts} className="rounded-2xl border border-white/12 bg-black/25 p-5">
-        <h3 className="text-lg font-medium text-white">Тикеры для минутной рассылки</h3>
+        <h3 className="text-lg font-medium text-white">Тикеры для рассылки в Telegram</h3>
         <p className="mt-1 text-sm text-white/60">
-          Отметьте компании — в сообщении будут последние цены MOEX (TQBR) по тикеру.
+          Отметьте компании: раз в минуту — котировки MOEX (TQBR), раз в 10 минут — новые новости
+          по этим эмитентам или текст о том, что новых новостей нет.
         </p>
         <div className="mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-white/10 p-3">
           {companies.map((c) => (

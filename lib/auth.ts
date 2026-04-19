@@ -9,6 +9,7 @@ type DbUser = {
   login: string;
   password: string;
   role: string;
+  is_blocked: boolean | null;
 };
 
 export type SafeUser = {
@@ -22,14 +23,16 @@ export class AuthError extends Error {
     | "INVALID_INPUT"
     | "USER_EXISTS"
     | "INVALID_CREDENTIALS"
-    | "USER_NOT_FOUND";
+    | "USER_NOT_FOUND"
+    | "ACCESS_DISABLED";
 
   constructor(
     code:
       | "INVALID_INPUT"
       | "USER_EXISTS"
       | "INVALID_CREDENTIALS"
-      | "USER_NOT_FOUND",
+      | "USER_NOT_FOUND"
+      | "ACCESS_DISABLED",
     message: string,
   ) {
     super(message);
@@ -131,25 +134,29 @@ export async function registerUser(login: string, password: string) {
 export async function loginUser(login: string, password: string) {
   const cleanLogin = assertCredentials(login, password);
 
-  const result = await sql<DbUser>(
-    `
-      SELECT id, login, password, role
+    const result = await sql<DbUser>(
+      `
+      SELECT id, login, password, role, is_blocked
       FROM users
       WHERE login = $1
       LIMIT 1
     `,
-    [cleanLogin],
-  );
+      [cleanLogin],
+    );
 
-  const user = result.rows[0];
-  if (!user) {
-    throw new AuthError("INVALID_CREDENTIALS", "Неверный логин или пароль.");
-  }
+    const user = result.rows[0];
+    if (!user) {
+      throw new AuthError("INVALID_CREDENTIALS", "Неверный логин или пароль.");
+    }
 
-  const isPasswordValid = await bcrypt.compare(password, user.password);
-  if (!isPasswordValid) {
-    throw new AuthError("INVALID_CREDENTIALS", "Неверный логин или пароль.");
-  }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      throw new AuthError("INVALID_CREDENTIALS", "Неверный логин или пароль.");
+    }
+
+    if (user.is_blocked === true) {
+      throw new AuthError("ACCESS_DISABLED", "Доступ к аккаунту заблокирован. Обратитесь к администратору.");
+    }
 
   return {
     id: normalizeUserId(user.id),

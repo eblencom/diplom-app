@@ -3,8 +3,10 @@ CREATE TABLE IF NOT EXISTS users (
   login VARCHAR(32) NOT NULL UNIQUE,
   password TEXT NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analyst')),
+  is_blocked BOOLEAN NOT NULL DEFAULT false,
   tg_username VARCHAR(255) NOT NULL DEFAULT '',
-  tg_chat_id BIGINT NULL
+  tg_chat_id BIGINT NULL,
+  tg_news_last_digest_at TIMESTAMP NULL
 );
 
 CREATE TABLE IF NOT EXISTS companies (

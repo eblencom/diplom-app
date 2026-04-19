@@ -4,6 +4,8 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 
+import { sql } from "@/lib/db";
+
 export type UserRole = "admin" | "analyst";
 
 export type SessionPayload = {
@@ -84,6 +86,10 @@ export function clearSessionCookie(response: NextResponse) {
   });
 }
 
+type BlockRow = {
+  is_blocked: boolean;
+};
+
 export async function getCurrentSession() {
   const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
 
@@ -91,5 +97,18 @@ export async function getCurrentSession() {
     return null;
   }
 
-  return verifySessionToken(token);
+  const session = await verifySessionToken(token);
+  if (!session) {
+    return null;
+  }
+
+  const res = await sql<BlockRow>(`SELECT is_blocked FROM users WHERE id = $1 LIMIT 1`, [
+    session.userId,
+  ]);
+  const row = res.rows[0];
+  if (!row || row.is_blocked === true) {
+    return null;
+  }
+
+  return session;
 }

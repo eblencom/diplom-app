@@ -27,6 +27,12 @@ export function AppHeader({ login, role }: AppHeaderProps) {
           Роль: <span className="font-medium">{roleLabel[role]}</span>
         </div>
         <Link
+          href="/dashboard"
+          className="rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+        >
+          Дашборд
+        </Link>
+        <Link
           href="/profile"
           className="rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white/10"
         >

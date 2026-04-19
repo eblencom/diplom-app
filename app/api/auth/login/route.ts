@@ -25,7 +25,12 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     if (error instanceof AuthError) {
-      const statusCode = error.code === "INVALID_CREDENTIALS" ? 401 : 400;
+      const statusCode =
+        error.code === "INVALID_CREDENTIALS"
+          ? 401
+          : error.code === "ACCESS_DISABLED"
+            ? 403
+            : 400;
 
       return NextResponse.json(
         { error: error.message, code: error.code },
