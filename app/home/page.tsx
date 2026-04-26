@@ -18,6 +18,7 @@ import {
 import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
 import { getCurrentSession } from "@/lib/session";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
+import type { UserPredictOnNews } from "@/lib/predicts-types";
 import { getUserWinrateStats } from "@/lib/user-winrate";
 
 type HomePageProps = {
@@ -41,6 +42,50 @@ function splitParagraphs(text: string) {
     .split(/\n{2,}/)
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+/** Фон карточки новости по итогам закрытых предсказаний: успех — зелёный, неуспех — красный, нейтрал — молочный. */
+function newsArticleTone(predicts: UserPredictOnNews[]) {
+  const closed = predicts.filter((p) => p.status === "closed");
+  if (closed.length === 0) {
+    return "pending" as const;
+  }
+  let win = false;
+  let lose = false;
+  let neutral = false;
+  for (const p of closed) {
+    if (p.result === "win") {
+      win = true;
+    } else if (p.result === "lose") {
+      lose = true;
+    } else if (p.result === "neutral") {
+      neutral = true;
+    }
+  }
+  if (lose) {
+    return "bad" as const;
+  }
+  if (win) {
+    return "good" as const;
+  }
+  if (neutral) {
+    return "milky" as const;
+  }
+  return "pending" as const;
+}
+
+function newsArticleClass(tone: ReturnType<typeof newsArticleTone>) {
+  const pad = "rounded-2xl border p-4 sm:p-6";
+  switch (tone) {
+    case "good":
+      return `${pad} border-emerald-500/35 bg-gradient-to-br from-emerald-950/55 via-[#0a1a12]/92 to-black/50 shadow-[0_12px_48px_rgba(16,185,129,0.12)]`;
+    case "bad":
+      return `${pad} border-rose-500/35 bg-gradient-to-br from-rose-950/50 via-[#1a0a0e]/92 to-black/50 shadow-[0_12px_48px_rgba(244,63,94,0.1)]`;
+    case "milky":
+      return `${pad} border-[#e8e0d4]/28 bg-gradient-to-br from-[#f4efe6]/[0.14] via-[#10082c]/88 to-[#06040f]/95 shadow-[0_12px_40px_rgba(0,0,0,0.25)]`;
+    default:
+      return `${pad} border-cyan-500/20 bg-gradient-to-br from-[#10082c]/95 via-[#0a061f]/90 to-black/50 shadow-[0_12px_48px_rgba(34,211,238,0.06)]`;
+  }
 }
 
 export default async function HomePage({ searchParams }: HomePageProps) {
@@ -88,18 +133,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     ]);
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-[#05021b] px-4 py-8 text-white sm:px-6">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#05021b] px-4 py-6 text-white sm:px-6 sm:py-8">
       <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
 
         <TickerTape />
 
-        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-8 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl">
-          <h1 className="text-3xl font-semibold">Главная страница приложения</h1>
-          <p className="mt-3 max-w-3xl text-white/70">
-            Новости обновляются парсером автоматически каждую минуту (тестовый
-            режим).
-          </p>
+        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
+          <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
+            Последние новости финансового мира
+          </h1>
 
           <Suspense
             fallback={
@@ -126,7 +169,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             {newsPage.items.map((item) => (
               <article
                 key={item.id}
-                className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-[#10082c]/95 via-[#0a061f]/90 to-black/50 p-6 shadow-[0_12px_48px_rgba(34,211,238,0.06)]"
+                className={newsArticleClass(newsArticleTone(item.predicts))}
               >
                 {(() => {
                   const paragraphs = splitParagraphs(item.text);
@@ -162,7 +205,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                       <NewsPredictPanel newsId={item.id} initialPredicts={item.predicts} />
 
-                      <p className="text-white/90">{firstParagraph}</p>
+                      <p className="mt-5 mb-4 px-2 text-white/90 sm:mt-6 sm:mb-5 sm:px-4">
+                        {firstParagraph}
+                      </p>
 
                       {restParagraphs.length > 0 && (
                         <details className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3">
@@ -190,42 +235,40 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
           </div>
 
-          <div className="mt-8 flex items-center justify-between">
+          <div className="mt-8 flex flex-wrap items-center gap-3">
             <p className="text-sm text-white/65">
               Страница {newsPage.page} из {newsPage.totalPages}
             </p>
-            <div className="flex items-center gap-2">
-              <Link
-                href={`/home${buildHomeNewsQuery({
-                  page: Math.max(1, newsPage.page - 1),
-                  favoritesOnly,
-                  companyId: favoritesOnly ? undefined : companyId,
-                  category: favoritesOnly ? undefined : categoryFilter,
-                })}`}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  newsPage.page <= 1
-                    ? "pointer-events-none border-white/15 text-white/40"
-                    : "border-white/35 text-white hover:bg-white/10"
-                }`}
-              >
-                Назад
-              </Link>
-              <Link
-                href={`/home${buildHomeNewsQuery({
-                  page: Math.min(newsPage.totalPages, newsPage.page + 1),
-                  favoritesOnly,
-                  companyId: favoritesOnly ? undefined : companyId,
-                  category: favoritesOnly ? undefined : categoryFilter,
-                })}`}
-                className={`rounded-full border px-4 py-2 text-sm transition ${
-                  newsPage.page >= newsPage.totalPages
-                    ? "pointer-events-none border-white/15 text-white/40"
-                    : "border-white/35 text-white hover:bg-white/10"
-                }`}
-              >
-                Вперед
-              </Link>
-            </div>
+            <Link
+              href={`/home${buildHomeNewsQuery({
+                page: Math.max(1, newsPage.page - 1),
+                favoritesOnly,
+                companyId: favoritesOnly ? undefined : companyId,
+                category: favoritesOnly ? undefined : categoryFilter,
+              })}`}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                newsPage.page <= 1
+                  ? "pointer-events-none border-white/15 text-white/40"
+                  : "border-white/35 text-white hover:bg-white/10"
+              }`}
+            >
+              Назад
+            </Link>
+            <Link
+              href={`/home${buildHomeNewsQuery({
+                page: Math.min(newsPage.totalPages, newsPage.page + 1),
+                favoritesOnly,
+                companyId: favoritesOnly ? undefined : companyId,
+                category: favoritesOnly ? undefined : categoryFilter,
+              })}`}
+              className={`rounded-full border px-4 py-2 text-sm transition ${
+                newsPage.page >= newsPage.totalPages
+                  ? "pointer-events-none border-white/15 text-white/40"
+                  : "border-white/35 text-white hover:bg-white/10"
+              }`}
+            >
+              Вперед
+            </Link>
           </div>
         </div>
       </section>

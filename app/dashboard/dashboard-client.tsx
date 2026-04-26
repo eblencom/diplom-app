@@ -20,7 +20,7 @@ type AdminUserExportRow = {
 };
 
 const PANEL =
-  "rounded-xl border border-white/15 bg-black/20 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]";
+  "rounded-xl border border-white/15 bg-black/20 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-5";
 
 function defaultToYmd(): string {
   return new Date().toISOString().slice(0, 10);
@@ -52,8 +52,8 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
     ["Win (закрытые)", data.win],
     ["Lose (закрытые)", data.lose],
     ["Winrate", formatPct01(data.weightedWinrate)],
-    ["Σ result_percent", data.totalResultPercentSum],
-    ["Прибыльный горизонт (lag)", lagLine],
+    ["Σ %", data.totalResultPercentSum],
+    ["Прибыльный горизонт (гор.)", lagLine],
     [],
   ];
   const header = ["Дата", "Winrate %", "Предсказаний", "Новостей", "Σ % дня", "Σ % накопит."];
@@ -213,13 +213,13 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
   const lagPdf =
     data.bestProfitLag == null
       ? "Прибыльный горизонт: —"
-      : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Σ result% ${data.bestProfitLag.sumResultPercent.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
+      : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Σ % ${data.bestProfitLag.sumResultPercent.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
   const lines = [
     `Период: ${data.from} — ${data.to}`,
     `Область: ${scopeLabel}`,
     `Win / Lose: ${data.win} / ${data.lose}`,
     `Winrate: ${formatPct01(data.weightedWinrate)}`,
-    `Σ result_percent: ${data.totalResultPercentSum}`,
+    `Σ %: ${data.totalResultPercentSum}`,
     lagPdf,
     "",
   ];
@@ -337,7 +337,7 @@ export function DashboardClient({ isAdmin }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-white/12 bg-[#0c0824]/60 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)]">
+      <div className="rounded-xl border border-white/12 bg-[#0c0824]/60 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-5">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
             <h2 className="text-lg font-semibold text-white">Интервал и экспорт</h2>
@@ -416,9 +416,7 @@ export function DashboardClient({ isAdmin }: Props) {
                 className="mt-3"
               />
               <div className="mt-4 rounded-lg border border-white/10 bg-white/5 px-3.5 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-white/55">
-                  Σ result_percent
-                </p>
+                <p className="text-xs font-medium uppercase tracking-wide text-white/55">Σ %</p>
                 <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-cyan-100 sm:text-2xl">
                   {stats.totalResultPercentSum.toLocaleString("ru-RU", {
                     minimumFractionDigits: 2,

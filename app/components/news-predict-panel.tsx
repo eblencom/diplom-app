@@ -26,6 +26,16 @@ function predictionLabel(p: UserPredictOnNews["prediction"]) {
   return "Нейтральное";
 }
 
+function predictionTextClass(p: UserPredictOnNews["prediction"]) {
+  if (p === "positive") {
+    return "font-semibold text-emerald-400";
+  }
+  if (p === "negative") {
+    return "font-semibold text-rose-400";
+  }
+  return "font-semibold text-[#ede6d9]";
+}
+
 function resultLabel(result: UserPredictOnNews["result"]) {
   if (result === "win") {
     return "Успешный";
@@ -37,6 +47,19 @@ function resultLabel(result: UserPredictOnNews["result"]) {
     return "Нейтральный исход";
   }
   return null;
+}
+
+function resultTextClass(result: UserPredictOnNews["result"]) {
+  if (result === "win") {
+    return "font-semibold text-emerald-400";
+  }
+  if (result === "lose") {
+    return "font-semibold text-rose-400";
+  }
+  if (result === "neutral") {
+    return "font-semibold text-[#e8dcc8]";
+  }
+  return "font-semibold text-white/80";
 }
 
 function formatWaitHorizon(lagMinutes: number) {
@@ -229,15 +252,29 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
 
       {predicts.length > 0 && (
         <ul className="mt-4 space-y-4">
-          {predicts.map((predict) => (
+          {predicts.map((predict) => {
+            const closedCardClass =
+              predict.status === "closed"
+                ? predict.result === "win"
+                  ? "border-emerald-500/30 bg-gradient-to-br from-emerald-950/35 via-[#0c1810]/75 to-black/35"
+                  : predict.result === "lose"
+                    ? "border-rose-500/30 bg-gradient-to-br from-rose-950/35 via-[#18080c]/75 to-black/35"
+                    : predict.result === "neutral"
+                      ? "border-[#e8e0d4]/22 bg-gradient-to-br from-[#f4efe6]/[0.08] via-[#0f0828]/70 to-black/30"
+                      : "border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25"
+                : "border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25";
+
+            return (
             <li
               key={predict.id}
-              className="rounded-xl border border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25 p-4 shadow-inner shadow-black/20"
+              className={`rounded-xl border p-4 shadow-inner shadow-black/20 ${closedCardClass}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="text-sm text-white/85">
                   <span className="text-white/55">Тональность: </span>
-                  <span className="font-medium text-white">{predictionLabel(predict.prediction)}</span>
+                  <span className={predictionTextClass(predict.prediction)}>
+                    {predictionLabel(predict.prediction)}
+                  </span>
                   <span className="ml-2 text-xs text-white/45">
                     · горизонт {formatWaitHorizon(predict.lagMinutes)}
                   </span>
@@ -264,7 +301,9 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                   {resultLabel(predict.result) ? (
                     <p className="mt-2 text-sm text-white/90">
                       Результат:{" "}
-                      <span className="font-semibold text-white">{resultLabel(predict.result)}</span>
+                      <span className={resultTextClass(predict.result)}>
+                        {resultLabel(predict.result)}
+                      </span>
                     </p>
                   ) : (
                     <p className="mt-2 text-white/55">
@@ -299,7 +338,8 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                 </>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 

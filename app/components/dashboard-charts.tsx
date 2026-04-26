@@ -203,9 +203,7 @@ function DailyResultPercentBarsFixed({ days }: { days: DashboardDayPoint[] }) {
   return (
     <div className="rounded-xl border border-white/12 bg-black/30 p-3 sm:p-3.5">
       <h3 className="text-sm font-semibold text-white/90">Σ % по дням</h3>
-      <p className="mt-1 text-xs leading-snug text-white/50">
-        Сумма result_percent за день (масштаб по min…max интервала)
-      </p>
+      <p className="mt-1 text-xs leading-snug text-white/50">Сумма % за день</p>
       <div className="mt-2 flex gap-1.5">
         <div
           className="flex shrink-0 flex-col justify-between py-1 text-right text-[11px] leading-none text-white/50"

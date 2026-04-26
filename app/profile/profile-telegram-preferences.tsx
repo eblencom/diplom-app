@@ -113,17 +113,17 @@ export function ProfileTelegramPreferences({
   }
 
   return (
-    <div className="space-y-8 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-[#0a061f]/60 to-black/30 p-6">
+    <div className="space-y-6 rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-cyan-950/20 via-[#0a061f]/60 to-black/30 p-4 sm:space-y-8 sm:p-6">
       <div>
-        <h2 className="text-xl font-semibold text-white">Telegram</h2>
+        <h2 className="text-lg font-semibold text-white sm:text-xl">Telegram</h2>
         <p className="mt-2 text-sm text-white/65">
           Укажите ваш Telegram username (как в профиле Telegram, без @). После привязки чата бот
-          раз в минуту пришлёт цены MOEX по выбранным тикерам и раз в 10 минут — новости по ним
+          раз в минуту пришлёт цены MOEX по выбранным тикерам и раз в 10 минут - новости по ним
           (если новых нет, придёт короткое уведомление).
         </p>
         {initialTgChatId != null ? (
           <p className="mt-2 text-sm font-medium text-emerald-300/90">
-            Чат с ботом привязан — рассылка будет приходить сюда.
+            Чат с ботом привязан - рассылка будет приходить сюда.
           </p>
         ) : (
           <p className="mt-2 text-sm text-amber-200/85">
@@ -156,23 +156,39 @@ export function ProfileTelegramPreferences({
       <form onSubmit={onSaveAlerts} className="rounded-2xl border border-white/12 bg-black/25 p-5">
         <h3 className="text-lg font-medium text-white">Тикеры для рассылки в Telegram</h3>
         <p className="mt-1 text-sm text-white/60">
-          Отметьте компании: раз в минуту — котировки MOEX (TQBR), раз в 10 минут — новые новости
-          по этим эмитентам или текст о том, что новых новостей нет.
+          Отметьте компании: раз в минуту - котировки MOEX, раз в 10 минут - новые новости по этим
+          эмитентам или текст о том, что новых новостей нет.
         </p>
-        <div className="mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-white/10 p-3">
+        <div className="scrollbar-none mt-4 max-h-64 space-y-2 overflow-y-auto rounded-xl border border-white/10 bg-black/15 p-3">
           {companies.map((c) => (
             <label
               key={c.id}
-              className="flex cursor-pointer items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-white/5"
+              className="group flex cursor-pointer items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 transition hover:border-cyan-500/30 hover:bg-cyan-500/[0.07] focus-within:ring-2 focus-within:ring-cyan-400/40"
             >
               <input
                 type="checkbox"
                 checked={selected.has(c.id)}
                 onChange={() => toggleCompany(c.id)}
-                className="size-4 rounded border-white/30 text-cyan-500 focus:ring-cyan-500/40"
+                className="peer sr-only"
               />
-              <span className="font-mono text-sm text-cyan-200/90">{c.ticker}</span>
-              <span className="text-sm text-white/75">{c.name}</span>
+              <span
+                aria-hidden
+                className="flex size-[22px] shrink-0 items-center justify-center rounded-md border-2 border-white/28 bg-gradient-to-br from-white/[0.07] to-black/50 shadow-inner transition peer-checked:border-cyan-400/85 peer-checked:from-cyan-500/35 peer-checked:to-cyan-700/45 peer-checked:shadow-[0_0_14px_rgba(34,211,238,0.28)] peer-checked:[&>svg]:opacity-100"
+              >
+                <svg
+                  viewBox="0 0 14 14"
+                  className="size-3.5 text-cyan-50 opacity-0 transition"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M3 7.5 6 10.5 11 4" />
+                </svg>
+              </span>
+              <span className="min-w-0 font-mono text-sm font-semibold text-cyan-200/95">{c.ticker}</span>
+              <span className="min-w-0 flex-1 text-sm leading-snug text-white/78">{c.name}</span>
             </label>
           ))}
         </div>
@@ -194,7 +210,12 @@ export function ProfileTelegramPreferences({
             {link ? (
               <>
                 Откройте бота:{" "}
-                <a href={link} className="text-cyan-300 underline" target="_blank" rel="noreferrer">
+                <a
+                  href={link}
+                  className="break-all text-cyan-300 underline"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {link}
                 </a>
               </>

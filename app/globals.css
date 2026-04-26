@@ -1,5 +1,84 @@
 @import "tailwindcss";
 
+/* По умолчанию скроллбар скрыт; на /home класс .home-scrollbar на <html> — см. home-chrome.tsx */
+html {
+  overflow-x: clip;
+  scroll-behavior: auto;
+}
+html:not(.home-scrollbar) {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html:not(.home-scrollbar)::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent;
+}
+
+body {
+  overscroll-behavior-y: contain;
+}
+html:not(.home-scrollbar) body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html:not(.home-scrollbar) body::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent;
+}
+
+/* /home — видимый скроллбар */
+html.home-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 10, 53, 0.6);
+}
+html.home-scrollbar::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html.home-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 10, 53, 0.55);
+}
+html.home-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+html.home-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(186, 230, 253, 0.45);
+  background-clip: padding-box;
+}
+html.home-scrollbar body {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 10, 53, 0.6);
+}
+html.home-scrollbar body::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+html.home-scrollbar body::-webkit-scrollbar-track {
+  background: rgba(15, 10, 53, 0.55);
+}
+html.home-scrollbar body::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+/* Внутренние области с прокруткой — тот же класс */
+.scrollbar-none {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  display: none;
+}
+
 @keyframes ticker-marquee {
   from {
     transform: translateX(0);

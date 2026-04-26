@@ -13,7 +13,7 @@ export default async function DashboardPage() {
   }
 
   return (
-    <main className="flex min-h-0 flex-1 flex-col bg-[#05021b] px-4 py-5 text-white sm:px-6 sm:py-6">
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#05021b] px-4 py-5 text-white sm:px-6 sm:py-6">
       <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
 

@@ -37,7 +37,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
               {formatLagMinutes(bestProfitLag.lagMinutes)}
             </p>
             <p className="mt-1 text-sm leading-snug text-white/55">
-              Σ result%:{" "}
+              Σ %:{" "}
               <span className="font-mono tabular-nums text-cyan-100">
                 {bestProfitLag.sumResultPercent.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
@@ -45,9 +45,6 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
                 })}
               </span>{" "}
               · закр. {bestProfitLag.closedCount}
-            </p>
-            <p className="mt-1 text-xs leading-snug text-white/45">
-              Макс. сумма % среди выбранных lag (закрытые)
             </p>
           </>
         ) : (

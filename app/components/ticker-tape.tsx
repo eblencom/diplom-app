@@ -64,7 +64,7 @@ export function TickerTape({ className }: TickerTapeProps) {
     >
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-[10px] uppercase tracking-wider text-emerald-200/80">
         <span className="inline-block size-1.5 animate-pulse rounded-full bg-emerald-400" />
-        Котировки (обновление ~20 с)
+        Лента котировок
       </div>
       <div className="relative h-11 overflow-hidden">
         <div

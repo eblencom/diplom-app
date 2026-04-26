@@ -6,11 +6,10 @@ import { SITE_DISPLAY_NAME, SITE_UTP } from "@/lib/site-branding";
 
 type LandingHeroProps = {
   issuersCount: number;
-  newsPreviewCount: number;
 };
 
-/** Центрированный УТП и форма входа под ним; фон — изображение на всю карточку. */
-export function LandingHero({ issuersCount, newsPreviewCount }: LandingHeroProps) {
+/** УТП и форма по центру колонкой — одинаково на мобильных и десктопе. */
+export function LandingHero({ issuersCount }: LandingHeroProps) {
   return (
     <section className="relative overflow-hidden rounded-2xl border border-white/18 shadow-[0_16px_48px_rgba(0,0,0,0.4)]">
       <div className="pointer-events-none absolute inset-0 min-h-[280px] sm:min-h-[320px]">
@@ -29,41 +28,44 @@ export function LandingHero({ issuersCount, newsPreviewCount }: LandingHeroProps
         />
       </div>
 
-      <div className="relative z-10 flex flex-col items-center px-5 py-10 text-center sm:px-8 sm:py-12">
-        <p className="text-[11px] font-medium uppercase tracking-[0.2em] text-cyan-200/85">
+      <div className="relative z-10 flex flex-col items-center px-4 py-8 text-center sm:px-6 sm:py-10 md:px-8 md:py-12">
+        <p className="text-[10px] font-medium uppercase tracking-[0.2em] text-cyan-200/85 sm:text-[11px]">
           Вход в систему
         </p>
-        <h1 className="mt-3 text-2xl font-bold leading-tight text-white sm:text-3xl">
-          {SITE_DISPLAY_NAME}
-        </h1>
-        <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/82 sm:text-[15px]">
-          {SITE_UTP}
-        </p>
-        <p className="mt-4 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-xs text-white/50">
-          <span>
-            <span className="font-mono font-semibold tabular-nums text-white/85">{issuersCount}</span>{" "}
-            эмитентов
-          </span>
-          <span className="text-white/25" aria-hidden>
-            ·
-          </span>
-          <span>
-            <span className="font-mono font-semibold tabular-nums text-white/85">{newsPreviewCount}</span>{" "}
-            в превью
-          </span>
-          <span className="text-white/25" aria-hidden>
-            ·
-          </span>
-          <span className="text-emerald-200/80">MOEX</span>
-        </p>
-        <Link
-          href="#issuers"
-          className="mt-4 text-sm font-medium text-cyan-200/90 underline-offset-4 hover:text-cyan-100 hover:underline"
-        >
-          Эмитенты и лента новостей ниже ↓
-        </Link>
 
-        <div id="auth-block" className="scroll-mt-20 mt-8 w-full max-w-md">
+        <div className="mt-6 flex w-full max-w-xl flex-col items-center sm:mt-8">
+          <h1 className="text-balance text-2xl font-bold leading-tight text-white sm:text-3xl md:text-4xl">
+            {SITE_DISPLAY_NAME}
+          </h1>
+          <p className="mt-4 max-w-xl text-balance px-1 text-[15px] font-semibold leading-snug text-white/95 sm:mt-5 sm:text-lg md:text-xl md:leading-snug">
+            {SITE_UTP}
+          </p>
+          <p className="mt-4 flex max-w-lg flex-col items-center gap-2 text-xs text-white/60 sm:mt-5 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-3 sm:gap-y-1 sm:text-sm sm:text-white/55">
+            <span className="inline-flex flex-wrap items-center justify-center gap-x-1">
+              <span className="font-mono font-semibold tabular-nums text-white/90">{issuersCount}</span>
+              <span>эмитентов</span>
+            </span>
+            <span className="hidden text-white/25 sm:inline" aria-hidden>
+              ·
+            </span>
+            <span className="text-center text-white/80 sm:text-left">
+              Источник новостей:{" "}
+              <span className="font-semibold text-emerald-200/95">Investing.com</span>
+            </span>
+            <span className="hidden text-white/25 sm:inline" aria-hidden>
+              ·
+            </span>
+            <span className="font-medium text-emerald-200/85">MOEX</span>
+          </p>
+          <Link
+            href="#issuers"
+            className="mt-4 text-sm font-medium text-cyan-200/90 underline-offset-4 hover:text-cyan-100 hover:underline sm:mt-5"
+          >
+            Эмитенты и лента новостей ниже ↓
+          </Link>
+        </div>
+
+        <div id="auth-block" className="scroll-mt-20 mt-8 w-full max-w-md sm:mt-10">
           <AuthForm variant="landing" />
         </div>
       </div>

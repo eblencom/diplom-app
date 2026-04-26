@@ -237,7 +237,7 @@ export function NewsHomeFilters({
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-end">
-        <div className="flex min-w-[200px] flex-1 items-end gap-2">
+        <div className="flex min-w-0 flex-1 items-end gap-2 sm:min-w-[200px]">
           <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-white/60">
             Компания
             <select
@@ -276,7 +276,7 @@ export function NewsHomeFilters({
           </button>
         </div>
 
-        <div className="flex min-w-[200px] flex-1 items-end gap-2">
+        <div className="flex min-w-0 flex-1 items-end gap-2 sm:min-w-[200px]">
           <label className="flex min-w-0 flex-1 flex-col gap-1.5 text-xs text-white/60">
             Категория
             <select

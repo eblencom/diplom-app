@@ -23,13 +23,19 @@ export default async function Home() {
   ]);
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col overflow-x-hidden bg-[#05021b] px-4 pb-14 pt-4 text-white sm:px-6 sm:pb-16 sm:pt-5">
-      <div className="pointer-events-none absolute left-1/2 top-[-180px] h-[320px] w-[600px] -translate-x-1/2 rounded-full bg-fuchsia-500/50 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-220px] left-[-100px] h-[400px] w-[400px] rounded-full bg-violet-700/45 blur-3xl" />
-      <div className="pointer-events-none absolute right-[-100px] top-[30%] h-[350px] w-[350px] rounded-full bg-indigo-600/40 blur-3xl" />
-
-      <div className={`relative z-10 ${APP_CONTENT_MAX_CLASS}`}>
-        <LandingHero issuersCount={companies.length} newsPreviewCount={newsPreview.length} />
+    <>
+      {/* Фон вне потока скролла — тяжёлый blur не перерисовывается на каждый px прокрутки */}
+      <div
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#05021b]"
+        aria-hidden
+      >
+        <div className="absolute left-1/2 top-[-180px] h-[280px] w-[520px] -translate-x-1/2 rounded-full bg-fuchsia-500/45 blur-2xl will-change-transform" />
+        <div className="absolute bottom-[-200px] left-[-80px] h-[360px] w-[360px] rounded-full bg-violet-700/40 blur-2xl will-change-transform" />
+        <div className="absolute right-[-80px] top-[28%] h-[300px] w-[300px] rounded-full bg-indigo-600/35 blur-2xl will-change-transform" />
+      </div>
+      <main className="relative z-10 flex min-h-0 w-full max-w-full flex-col overflow-x-clip bg-transparent px-3 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))] text-white sm:px-5 sm:pt-5 md:px-6">
+      <div className={`relative ${APP_CONTENT_MAX_CLASS}`}>
+        <LandingHero issuersCount={companies.length} />
         <LandingCapabilitiesChips />
 
         <LandingCompaniesBlock companies={companies} sectionId="issuers" />
@@ -37,5 +43,6 @@ export default async function Home() {
         <LandingRegisterCta />
       </div>
     </main>
+    </>
   );
 }
