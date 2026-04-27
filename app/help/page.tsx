@@ -1,0 +1,112 @@
+import { redirect } from "next/navigation";
+import { AppHeader } from "@/app/components/app-header";
+import { BackNavButton } from "@/app/components/back-nav-button";
+import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
+import { getCurrentSession } from "@/lib/session";
+
+function HelpSection({
+  title,
+  items,
+}: {
+  title: string;
+  items: readonly string[];
+}) {
+  return (
+    <section className="rounded-2xl border border-white/12 bg-black/20 p-4 sm:p-5">
+      <h2 className="text-lg font-semibold text-white sm:text-xl">{title}</h2>
+      <ul className="mt-3 space-y-2 text-sm leading-relaxed text-white/80 sm:text-[15px]">
+        {items.map((item) => (
+          <li key={item} className="rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2">
+            {item}
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+export default async function HelpPage() {
+  const session = await getCurrentSession();
+  if (!session) {
+    redirect("/");
+  }
+
+  return (
+    <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#05021b] px-4 py-6 text-white sm:px-6 sm:py-8">
+      <section className={APP_CONTENT_MAX_CLASS}>
+        <AppHeader login={session.login} role={session.role} />
+
+        <div className="mb-4 sm:mb-6">
+          <BackNavButton />
+        </div>
+
+        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
+          <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">Справочная система</h1>
+          <p className="mt-3 text-sm leading-relaxed text-white/70 sm:text-base">
+            Краткое руководство по работе с системой.
+          </p>
+
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <HelpSection
+              title="1) Вход в систему"
+              items={[
+                "На стартовой странице выполните вход или регистрацию.",
+                "После входа система сохраняет сессию и открывает страницу /home.",
+                "Если нужен выход из аккаунта, нажмите кнопку «Выйти» в шапке.",
+              ]}
+            />
+            <HelpSection
+              title="2) Главная /home"
+              items={[
+                "Сверху находится лента котировок по тикерам.",
+                "Для фильтрации новостей используйте «Компания», «Категория» и «Только избранное».",
+                "По каждой новости можно посмотреть карточку предсказаний и текущий статус.",
+                "Пагинация внизу переключает страницы новостей без потери выбранных фильтров.",
+              ]}
+            />
+            <HelpSection
+              title="3) Предсказания по новости"
+              items={[
+                "Создайте предсказание в блоке новости с выбранным горизонтом (lag).",
+                "Система использует цену до новости и цену через указанный интервал.",
+                "После появления данных статус закрывается в win / lose / neutral.",
+                "Дополнительно доступны мини-графики по цене (включая минутный путь).",
+              ]}
+            />
+            <HelpSection
+              title="4) Дашборд"
+              items={[
+                "Откройте раздел «Дашборд» из шапки.",
+                "Выберите интервал дат и нажмите «Обновить».",
+                "Смотрите агрегаты: винрейт, количество предсказаний, новости, Σ % по дням.",
+                "Экспортируйте результаты в Excel или PDF для отчётности.",
+              ]}
+            />
+            <HelpSection
+              title="5) Профиль и Telegram"
+              items={[
+                "В профиле можно изменить логин, пароль и удалить аккаунт (с подтверждением паролем).",
+                "Укажите Telegram username без символа @.",
+                "Выберите тикеры для рассылки и сохраните.",
+                "Откройте бота и отправьте команду /start <ваш_логин_сайта>.",
+              ]}
+            />
+            <HelpSection
+              title="6) Роль администратора"
+              items={[
+                "Администратор видит панель учётных записей на дашборде.",
+                "Можно блокировать и разблокировать аналитиков.",
+                "Администраторские аккаунты отключать нельзя.",
+              ]}
+            />
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-cyan-400/25 bg-cyan-950/20 p-4 text-sm text-cyan-100/90 sm:text-[15px]">
+            Подсказка: если интерфейс кажется «пустым», сначала проверьте фильтры новостей и выбранный
+            интервал дат на дашборде — чаще всего причина в этом.
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

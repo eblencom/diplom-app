@@ -31,6 +31,14 @@ export function AppHeader({ login, role }: AppHeaderProps) {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
+            href="/help"
+            aria-label="Открыть справочную систему"
+            title="Справка"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/45 bg-cyan-500/10 text-base font-semibold text-cyan-100 transition hover:bg-cyan-500/20"
+          >
+            ?
+          </Link>
+          <Link
             href="/dashboard"
             className="inline-flex flex-1 items-center justify-center rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white/10 sm:flex-initial"
           >
