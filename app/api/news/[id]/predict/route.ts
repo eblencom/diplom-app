@@ -14,6 +14,7 @@ type PredictRow = {
   status: string;
   result: string | null;
   result_percent: string | null;
+  profit: string | null;
   lag_minutes: string | number;
 };
 
@@ -99,7 +100,7 @@ export async function POST(
     `
       INSERT INTO predicts (user_id, news_id, prediction, lag_minutes)
       VALUES ($1, $2, $3, $4)
-      RETURNING id, news_id, prediction, status, result, result_percent, lag_minutes
+      RETURNING id, news_id, prediction, status, result, result_percent, profit, lag_minutes
     `,
     [session.userId, newsId, prediction, lagMinutes],
   );

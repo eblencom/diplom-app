@@ -1,8 +1,3 @@
-/**
- * Встраивание Roboto (TTF из /public/fonts) в jsPDF для корректной кириллицы.
- * Без этого jsPDF рисует русский текст шрифтом Helvetica и получаются «кракозябры».
- */
-
 import type { jsPDF } from "jspdf";
 
 function arrayBufferToVfsBinaryString(buffer: ArrayBuffer): string {
@@ -19,7 +14,6 @@ function arrayBufferToVfsBinaryString(buffer: ArrayBuffer): string {
 const VFS_NAME = "Roboto-Regular.ttf";
 const FONT_FAMILY = "Roboto";
 
-/** @returns true, если шрифт подключён */
 export async function embedRobotoCyrillic(doc: jsPDF): Promise<boolean> {
   try {
     const res = await fetch("/fonts/Roboto-Regular.ttf", { cache: "force-cache" });

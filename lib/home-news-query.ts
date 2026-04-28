@@ -1,5 +1,3 @@
-/** Сборка query string для /home (пагинация + фильтры). */
-
 export function buildHomeNewsQuery(parts: {
   page: number;
   companyId?: number;

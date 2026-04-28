@@ -145,9 +145,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
             return;
           }
         }
-      } catch {
-        // сеть / временные ошибки
-      }
+      } catch {}
 
       timeoutId = window.setTimeout(() => void tick(), PREDICT_CLIENT_POLL_MS);
     };
@@ -317,6 +315,16 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                       <span className="font-medium text-white">
                         {predict.resultPercent > 0 ? "+" : ""}
                         {predict.resultPercent.toFixed(2)}%
+                      </span>
+                    </p>
+                  )}
+
+                  {predict.profit !== null && predict.profit !== undefined && (
+                    <p className="mt-1 text-white/75">
+                      Profit:{" "}
+                      <span className="font-medium text-white">
+                        {predict.profit > 0 ? "+" : ""}
+                        {predict.profit.toFixed(2)}%
                       </span>
                     </p>
                   )}

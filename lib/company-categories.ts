@@ -1,7 +1,3 @@
-/**
- * Категории для фильтра на главной. Тикер может входить в несколько
- * (например нефть + энергетика).
- */
 export const CATEGORY_ORDER = [
   "energy",
   "oil",
@@ -24,7 +20,6 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   retail: "Ритейл",
 };
 
-/** Тикер (верхний регистр) → список категорий. */
 export const TICKER_CATEGORIES: Record<string, readonly CategorySlug[]> = {
   GAZP: ["energy", "gas"],
   ROSN: ["energy", "oil"],

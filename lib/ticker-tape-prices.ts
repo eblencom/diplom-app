@@ -11,9 +11,7 @@ export type TickerTapeRow = {
 export type TickerTapeItem = {
   ticker: string;
   name: string;
-  /** Отформатированная цена для ленты. */
   price: string;
-  /** link | moex | none */
   source: "link" | "moex" | "none";
 };
 
@@ -27,9 +25,6 @@ function decodeHtmlEntities(s: string): string {
     .trim();
 }
 
-/**
- * Ищет цену в HTML страницы Investing/MOEX: span с классом, содержащим `price`.
- */
 export function extractPriceFromPriceLinkHtml(html: string): string | null {
   const lower = html.toLowerCase();
   if (lower.includes("just a moment") || lower.includes("_cf_chl_opt")) {
@@ -111,9 +106,7 @@ async function priceForRow(row: TickerTapeRow): Promise<TickerTapeItem> {
           return { ticker: row.ticker, name: row.name, price: parsed, source: "link" };
         }
       }
-    } catch {
-      // сеть / блокировка
-    }
+    } catch {}
   }
 
   const moex = await fetchMoexLastPrice(row.ticker);
@@ -141,7 +134,6 @@ export async function getTickerTapeRows(): Promise<TickerTapeRow[]> {
   return result.rows;
 }
 
-/** Параллельно, но с ограничением одновременных запросов. */
 export async function buildTickerTapeItems(
   rows: TickerTapeRow[],
   concurrency = 4,

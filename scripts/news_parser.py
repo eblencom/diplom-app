@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""
-Парсер новостей со страниц акций Investing (HTML).
-
-Investing отдаёт ленту и статьи через Cloudflare (страница «Just a moment…»).
-С «чистого» сервера или датацентрового IP часто не хватает cloudscraper/curl_cffi.
-
-Опционально: поднимите FlareSolverr локально и задайте URL API, например:
-  set FLARESOLVERR_URL=http://127.0.0.1:8191/v1
-Тогда запросы пойдут через браузер FlareSolverr и вернётся реальный HTML ленты/статьи.
-
-Прокси (если нужен резидентный IP): стандартные переменные HTTP_PROXY/HTTPS_PROXY
-подхватываются библиотекой requests / curl_cffi.
-"""
 import json
 import os
 import re
@@ -465,7 +451,6 @@ def collect_company_news(
         if reached_cutoff_datetime:
             break
 
-        # If cutoff datetime is still not found on this page, move to +1 pagination page.
         next_url = next_page_url(current_page_url)
         if not next_url:
             if not page_has_parsed_datetime:
@@ -553,6 +538,7 @@ def run_parser() -> dict[str, Any]:
 
 def main() -> int:
     try:
+        # glavniy progon parsera
         report = run_parser()
         write_log(
             "Парсер завершен. Компаний всего: "
@@ -572,6 +558,7 @@ def main() -> int:
         print(json.dumps(report, ensure_ascii=False))
         return 0
     except Exception as error:
+        # esli upali to log + stderr i kod 1
         write_log(f"Ошибка парсера: {error}")
         print(
             json.dumps(

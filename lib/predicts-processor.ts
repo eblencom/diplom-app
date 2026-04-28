@@ -51,7 +51,7 @@ export async function closeExpectingPredicts(): Promise<number> {
       continue;
     }
 
-    const { result: outcome, resultPercent } = computePredictOutcome(
+    const { result: outcome, resultPercent, profit } = computePredictOutcome(
       prediction,
       before,
       after,
@@ -62,10 +62,11 @@ export async function closeExpectingPredicts(): Promise<number> {
         UPDATE predicts
         SET status = 'closed',
             result = $1,
-            result_percent = $2
-        WHERE id = $3 AND status = 'expect'
+            result_percent = $2,
+            profit = $3
+        WHERE id = $4 AND status = 'expect'
       `,
-      [outcome, resultPercent, predictId],
+      [outcome, resultPercent, profit, predictId],
     );
 
     if ((updated.rowCount ?? 0) > 0) {

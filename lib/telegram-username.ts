@@ -1,5 +1,3 @@
-/** Нормализация @username для Telegram (латиница, цифры, _, 5–32). */
-
 export function normalizeTelegramUsername(raw: string): string | null {
   let s = raw.trim();
   if (!s) {

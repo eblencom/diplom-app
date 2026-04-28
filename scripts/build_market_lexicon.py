@@ -1,10 +1,3 @@
-#!/usr/bin/env python3
-"""
-Собирает ~1000 позитивных и ~1000 негативных русских токенов для новостей о рынке.
-
-Источник коллокаций: SentiRusColl (Kotelnikova A.V., Kotelnikov E.V., AINL-2019).
-Из каждой строки извлекаются отдельные слова; добавляются доменные термины по акциям/Мосбирже.
-"""
 from __future__ import annotations
 
 import json
@@ -18,7 +11,6 @@ from lexicon_phrases import NEGATIVE_PHRASES, POSITIVE_PHRASES
 URL_POS = "https://raw.githubusercontent.com/kotelnikov-ev/SentiRusColl/master/SentiRusColl_pos.txt"
 URL_NEG = "https://raw.githubusercontent.com/kotelnikov-ev/SentiRusColl/master/SentiRusColl_neg.txt"
 
-# В репозитории SentiRusColl нет отдельного stop_words.txt в master; достаточно базового набора.
 RU_STOPWORDS = """
 и в во не что он на я с со как а то все она так его но да ты к из у за
 бы по только ей было вам бывает весь соотв соответственно при без до

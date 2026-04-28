@@ -1,6 +1,5 @@
 @import "tailwindcss";
 
-/* По умолчанию скроллбар скрыт; на /home класс .home-scrollbar на <html> — см. home-chrome.tsx */
 html {
   overflow-x: clip;
   scroll-behavior: auto;
@@ -28,7 +27,6 @@ html:not(.home-scrollbar) body::-webkit-scrollbar {
   background: transparent;
 }
 
-/* /home — видимый скроллбар */
 html.home-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(148, 163, 184, 0.45) rgba(15, 10, 53, 0.6);
@@ -68,7 +66,6 @@ html.home-scrollbar body::-webkit-scrollbar-thumb {
   background-clip: padding-box;
 }
 
-/* Внутренние области с прокруткой — тот же класс */
 .scrollbar-none {
   scrollbar-width: none;
   -ms-overflow-style: none;

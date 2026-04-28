@@ -1,4 +1,3 @@
-/** Подпись горизонта (lag_minutes) для UI и экспорта */
 export function formatLagMinutes(minutes: number): string {
   if (minutes >= 1440 && minutes % 1440 === 0) {
     return `${minutes / 1440} сут.`;

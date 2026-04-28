@@ -1,16 +1,3 @@
-#!/usr/bin/env python3
-"""
-Тональность новости по лексикону: отдельные слова + многословные фразы
-(data/market_lexicon.json). Фразы учитываются первыми (длинные раньше),
-чтобы «долг вырос» не сводилось к нейтральному «вырос».
-
-Слова сопоставляются по нормальной форме (pymorphy2), если пакет установлен —
-склонения («прибыль» / «прибыли») дают сигнал. Пороги классификации ниже,
-чем у грубого «одна фраза = класс», чтобы чаще выходить из neutral.
-
-Выход: одна строка JSON в stdout: {"prediction":"positive|neutral|negative"}.
-Ошибки — в stderr, код выхода ≠ 0.
-"""
 from __future__ import annotations
 
 import json
@@ -26,11 +13,9 @@ PHRASE_POS_WEIGHT = 3.2
 PHRASE_NEG_WEIGHT = 3.8
 NEGATED_POS_PENALTY = 0.2
 NEGATED_NEG_BONUS = 0.05
-# Один сильный маркер по слову/лемме уже смещает класс; фразы по-прежнему весят больше
 SCORE_POS_THRESHOLD = 0.2
 SCORE_NEG_THRESHOLD = -0.2
 PHRASE_MIN_LEN = 3
-# Доля «хвоста» после общего префикса лемма↔токен (без pymorphy2)
 FUZZY_SUFFIX_MAX_EXTRA = 5
 FUZZY_LEX_MIN_LEN = 5
 

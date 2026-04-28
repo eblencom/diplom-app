@@ -1,9 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
 
-/**
- * Root of the Next app (folder with next.config.*), even if `process.cwd()` is a parent directory.
- */
 export function getProjectRoot(): string {
   let current = path.resolve(process.cwd());
 

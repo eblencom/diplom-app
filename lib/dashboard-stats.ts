@@ -30,13 +30,15 @@ function enumerateDateStringsInclusive(from: string, to: string): string[] {
 type SummaryRow = {
   win: string | null;
   lose: string | null;
-  sum_pct: string | null;
+  sum_result_pct: string | null;
+  sum_profit: string | null;
 };
 
 type DailyPredRow = {
   d: string;
   pred_count: string | null;
-  sum_pct: string | null;
+  sum_result_pct: string | null;
+  sum_profit: string | null;
   wins: string | null;
   losses: string | null;
 };
@@ -54,7 +56,7 @@ type CompanyCountRow = {
 
 type BestLagRow = {
   lag_minutes: string | null;
-  sum_pct: string | null;
+  sum_profit: string | null;
   cnt: string | null;
 };
 
@@ -105,7 +107,11 @@ export async function getDashboardStats(input: {
       COALESCE(
         SUM(p.result_percent) FILTER (WHERE p.status = 'closed' AND p.result_percent IS NOT NULL),
         0
-      )::text AS sum_pct
+      )::text AS sum_result_pct,
+      COALESCE(
+        SUM(p.profit) FILTER (WHERE p.status = 'closed' AND p.profit IS NOT NULL),
+        0
+      )::text AS sum_profit
     FROM predicts p
     INNER JOIN news n ON n.id = p.news_id
     WHERE n.datetime >= $1::date
@@ -115,19 +121,21 @@ export async function getDashboardStats(input: {
     [from, to, isAdmin, uid],
   );
 
-  const s0 = sumRes.rows[0] ?? { win: "0", lose: "0", sum_pct: "0" };
+  const s0 = sumRes.rows[0] ?? { win: "0", lose: "0", sum_result_pct: "0", sum_profit: "0" };
   const win = num(s0.win);
   const lose = num(s0.lose);
   const wl = win + lose;
   const weightedWinrate = wl > 0 ? win / wl : null;
-  const totalResultPercentSum = num(s0.sum_pct);
+  const totalResultPercentSum = num(s0.sum_result_pct);
+  const totalProfitSum = num(s0.sum_profit);
 
   const dailyPred = await sql<DailyPredRow>(
     `
     SELECT
       (n.datetime::date)::text AS d,
       COUNT(*) FILTER (WHERE p.status = 'closed')::text AS pred_count,
-      COALESCE(SUM(p.result_percent) FILTER (WHERE p.status = 'closed'), 0)::text AS sum_pct,
+      COALESCE(SUM(p.result_percent) FILTER (WHERE p.status = 'closed'), 0)::text AS sum_result_pct,
+      COALESCE(SUM(p.profit) FILTER (WHERE p.status = 'closed'), 0)::text AS sum_profit,
       COALESCE(SUM(CASE WHEN p.status = 'closed' AND p.result = 'win' THEN 1 ELSE 0 END), 0)::text AS wins,
       COALESCE(SUM(CASE WHEN p.status = 'closed' AND p.result = 'lose' THEN 1 ELSE 0 END), 0)::text AS losses
     FROM predicts p
@@ -180,7 +188,7 @@ export async function getDashboardStats(input: {
     `
     SELECT
       p.lag_minutes::text AS lag_minutes,
-      COALESCE(SUM(p.result_percent), 0)::text AS sum_pct,
+      COALESCE(SUM(p.profit), 0)::text AS sum_profit,
       COUNT(*)::text AS cnt
     FROM predicts p
     INNER JOIN news n ON n.id = p.news_id
@@ -188,9 +196,9 @@ export async function getDashboardStats(input: {
       AND n.datetime < ($2::date + interval '1 day')
       AND ($3::boolean OR p.user_id = $4::bigint)
       AND p.status = 'closed'
-      AND p.result_percent IS NOT NULL
+      AND p.profit IS NOT NULL
     GROUP BY p.lag_minutes
-    ORDER BY SUM(p.result_percent) DESC NULLS LAST, COUNT(*) DESC
+    ORDER BY SUM(p.profit) DESC NULLS LAST, COUNT(*) DESC
     LIMIT 1
     `,
     [from, to, isAdmin, uid],
@@ -201,13 +209,14 @@ export async function getDashboardStats(input: {
     bl && lagM >= 1
       ? {
           lagMinutes: lagM,
-          sumResultPercent: num(bl.sum_pct),
+          sumProfit: num(bl.sum_profit),
           closedCount: num(bl.cnt),
         }
       : null;
 
   const allDays = enumerateDateStringsInclusive(from, to);
-  let cumulative = 0;
+  let cumulativeResult = 0;
+  let cumulativeProfit = 0;
   const days: DashboardDayPoint[] = allDays.map((date) => {
     const pr = predMap.get(date);
     const predictions = pr ? num(pr.pred_count) : 0;
@@ -215,15 +224,19 @@ export async function getDashboardStats(input: {
     const l = pr ? num(pr.losses) : 0;
     const wlDay = w + l;
     const winrate = wlDay > 0 ? w / wlDay : null;
-    const sumResultPercent = pr ? num(pr.sum_pct) : 0;
-    cumulative += sumResultPercent;
+    const sumResultPercent = pr ? num(pr.sum_result_pct) : 0;
+    const sumProfit = pr ? num(pr.sum_profit) : 0;
+    cumulativeResult += sumResultPercent;
+    cumulativeProfit += sumProfit;
     return {
       date,
       winrate,
       predictions,
       newsCount: newsMap.get(date) ?? 0,
       sumResultPercent,
-      cumulativeResultPercent: cumulative,
+      sumProfit,
+      cumulativeResultPercent: cumulativeResult,
+      cumulativeProfit,
     };
   });
 
@@ -237,6 +250,7 @@ export async function getDashboardStats(input: {
       lose,
       weightedWinrate,
       totalResultPercentSum,
+      totalProfitSum,
       days,
       companyPredictCounts,
       bestProfitLag,

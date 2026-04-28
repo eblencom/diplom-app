@@ -4,7 +4,6 @@ type WinLoseDonutProps = {
   className?: string;
 };
 
-/** Кольцевая диаграмма win/lose (conic-gradient). */
 export function WinLoseDonut({ win, lose, className }: WinLoseDonutProps) {
   const total = win + lose;
   const winDeg = total <= 0 ? 0 : (win / total) * 360;

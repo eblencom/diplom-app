@@ -32,7 +32,6 @@ export async function getUserNewsFavoriteCategorySlugs(userId: number): Promise<
   return out;
 }
 
-/** SQL-фрагмент для списка новостей: компания в избранных ИЛИ тикер попадает в избранные категории. */
 export async function getFavoritesWhereSql(userId: number): Promise<{
   clause: string;
   params: unknown[];

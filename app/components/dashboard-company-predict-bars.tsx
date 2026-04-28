@@ -39,7 +39,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
             <p className="mt-1 text-sm leading-snug text-white/55">
               Σ %:{" "}
               <span className="font-mono tabular-nums text-cyan-100">
-                {bestProfitLag.sumResultPercent.toLocaleString("ru-RU", {
+                {bestProfitLag.sumProfit.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}

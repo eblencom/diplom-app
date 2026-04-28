@@ -19,6 +19,7 @@ export async function getUserPredictsForNews(
         p.status,
         p.result,
         p.result_percent,
+        p.profit,
         p.lag_minutes,
         p.price_before,
         p.price_after,

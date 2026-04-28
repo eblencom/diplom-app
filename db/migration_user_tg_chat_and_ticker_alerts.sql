@@ -1,5 +1,3 @@
--- Применить к существующей БД: psql -U ... -d ... -f db/migration_user_tg_chat_and_ticker_alerts.sql
-
 ALTER TABLE users ADD COLUMN IF NOT EXISTS tg_chat_id BIGINT NULL;
 
 CREATE TABLE IF NOT EXISTS user_ticker_alerts (

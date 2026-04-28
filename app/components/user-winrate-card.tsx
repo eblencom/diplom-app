@@ -69,9 +69,7 @@ export function UserWinrateCard({ initial }: Props) {
               : null,
         });
       }
-    } catch {
-      // сеть / временные ошибки
-    }
+    } catch {}
   }, []);
 
   const onManualRefresh = useCallback(async () => {

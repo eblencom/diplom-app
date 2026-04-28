@@ -9,7 +9,6 @@ const CAPABILITY_CHIPS = [
   "Telegram по тикерам",
 ] as const;
 
-/** Короткий блок под hero — без второго «простынного» экрана. */
 export function LandingCapabilitiesChips() {
   return (
     <section className="mt-6 rounded-2xl border border-[#e8e0d4]/25 bg-[#f4efe6]/[0.12] px-4 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:mt-8 sm:px-7 sm:py-7">
@@ -53,7 +52,6 @@ export function LandingCompaniesBlock({
   sectionId,
 }: {
   companies: Company[];
-  /** Якорь для ссылок с hero (например #issuers) */
   sectionId?: string;
 }) {
   return (

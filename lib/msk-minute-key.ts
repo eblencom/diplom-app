@@ -1,8 +1,5 @@
-/** Минутная сетка Europe/Moscow (как в news_prices_sync: floor минуты новости). */
-
 const MSK = "Europe/Moscow";
 
-/** «YYYY-MM-DD HH:mm:00» по часовой зоне Москвы (секунды отброшены). */
 export function floorMinuteKeyMsk(d: Date): string {
   const p = new Intl.DateTimeFormat("en-CA", {
     timeZone: MSK,
@@ -22,7 +19,6 @@ export function floorMinuteKeyMsk(d: Date): string {
   return `${year}-${month}-${day} ${hour}:${minute}:00`;
 }
 
-/** Инстант начала минуты по ключу MSK (Москва = UTC+3). */
 export function mskKeyToUtcDate(key: string): Date {
   const m = key.match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2}):00$/);
   if (!m) {
@@ -41,7 +37,6 @@ export function addMinutesToMskKey(key: string, deltaMinutes: number): string {
   return floorMinuteKeyMsk(new Date(base.getTime() + deltaMinutes * 60_000));
 }
 
-/** Ключи минут от A включительно до A+lag включительно. */
 export function minuteKeysFromNewsFloor(newsDatetime: Date, lagMinutes: number): string[] {
   const lag = Math.max(0, Math.round(lagMinutes));
   const start = floorMinuteKeyMsk(newsDatetime);
@@ -52,7 +47,6 @@ export function minuteKeysFromNewsFloor(newsDatetime: Date, lagMinutes: number):
   return keys;
 }
 
-/** Диапазон календарных дат (UTC date) для запроса MOEX по окну ключей. */
 export function moexDayRangeForKeys(keys: string[]): { from: string; till: string } {
   if (keys.length === 0) {
     const t = new Date();

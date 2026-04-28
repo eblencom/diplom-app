@@ -11,6 +11,7 @@ export type PredictRowFields = {
   status: string;
   result: string | null;
   result_percent: string | number | null;
+  profit?: string | number | null;
   lag_minutes?: number | string | null;
   price_before?: string | number | null;
   price_after?: string | number | null;
@@ -51,6 +52,7 @@ export async function rowToUserPredictOnNews(
       status: "expect",
       result: null,
       resultPercent: null,
+      profit: null,
       lagMinutes,
       priceBefore: null,
       priceAfter: null,
@@ -76,6 +78,10 @@ export async function rowToUserPredictOnNews(
       row.result_percent === null || row.result_percent === undefined
         ? null
         : Number(row.result_percent),
+    profit:
+      row.profit === null || row.profit === undefined
+        ? null
+        : Number(row.profit),
     lagMinutes,
     priceBefore,
     priceAfter,

@@ -1,5 +1,3 @@
-/** Публичное название и УТП (лендинг, футер). */
-
 export const SITE_DISPLAY_NAME = "DiplomApp";
 
 export const SITE_UTP =

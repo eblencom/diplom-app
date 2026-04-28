@@ -1,7 +1,6 @@
 type Props = {
   priceBefore: number;
   priceAfter: number;
-  /** Подпись к точке B (горизонт в минутах). */
   lagMinutes?: number;
 };
 
@@ -17,7 +16,6 @@ function lagCaption(lagMinutes?: number) {
   return `A — до, B — через ${m} мин`;
 }
 
-/** Две точки: A = цена в минуту новости, B = закрытие свечи через lagMinutes минут (MOEX 1m). */
 export function PredictTwoPointChart({ priceBefore, priceAfter, lagMinutes }: Props) {
   const min = Math.min(priceBefore, priceAfter);
   const max = Math.max(priceBefore, priceAfter);

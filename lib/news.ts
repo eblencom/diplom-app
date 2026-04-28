@@ -50,7 +50,6 @@ export type NewsPageResult = {
 export type NewsListFilters = {
   companyId?: number;
   category?: CategorySlug;
-  /** Новости по любой из избранных компаний или категорий (нужен userId в getNewsPage). */
   favoritesOnly?: boolean;
 };
 
@@ -263,6 +262,7 @@ export async function getNewsPage(
         status,
         result,
         result_percent,
+        profit,
         lag_minutes,
         price_before,
         price_after

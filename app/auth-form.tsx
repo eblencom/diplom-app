@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 type Mode = "login" | "register";
 
 type AuthFormProps = {
-  /** landing — компактная карточка в сетке лендинга */
   variant?: "default" | "landing";
   className?: string;
 };

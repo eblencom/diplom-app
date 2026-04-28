@@ -1,18 +1,15 @@
-/** Параметры горизонта для предсказания (минуты после минуты новости, MSK floor). */
-
 export const MIN_LAG_MINUTES = 1;
 export const MAX_LAG_MINUTES = 1440;
 export const DEFAULT_LAG_MINUTES = 60;
 
 export const LAG_PRESETS: readonly number[] = [1, 5, 10, 30, 60, 120, 240];
 
-/** Запас после горизонта: синк MOEX + закрытие (сервер опрашивается чаще). */
 export const PREDICT_POLL_BUFFER_MINUTES = 8;
 
-/** Интервал опроса GET /predict в ожидании (мс). */
 export const PREDICT_CLIENT_POLL_MS = 600;
 
 export function clampLagMinutes(value: number): number {
+  // na vsyakiy sluchay obrezka diapazona
   if (!Number.isFinite(value)) {
     return DEFAULT_LAG_MINUTES;
   }

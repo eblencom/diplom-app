@@ -14,6 +14,7 @@ type AppHeaderProps = {
 
 export function AppHeader({ login, role }: AppHeaderProps) {
   return (
+    // verkhnyaya panelka
     <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-white/15 bg-[#0f0a35]/75 px-4 py-4 backdrop-blur-xl sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5">
       <Link href="/home" className="shrink-0 text-base font-semibold text-white sm:text-lg">
         DiplomApp

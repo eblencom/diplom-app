@@ -1,9 +1,5 @@
 import "server-only";
 
-/**
- * Минутные свечи MOEX TQBR (interval=1), begin как в ISS.
- * Дедуп по begin, сортировка по времени.
- */
 export async function fetchMoexCandles1mMap(
   ticker: string,
   dayFrom: string,

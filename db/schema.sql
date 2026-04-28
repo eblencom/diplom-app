@@ -1,4 +1,5 @@
 CREATE TABLE IF NOT EXISTS users (
+  -- baza userov, nichego slozhnogo
   id BIGSERIAL PRIMARY KEY,
   login VARCHAR(32) NOT NULL UNIQUE,
   password TEXT NOT NULL,
@@ -29,6 +30,7 @@ CREATE INDEX IF NOT EXISTS idx_news_company_datetime
 ON news (company_id, datetime DESC);
 
 CREATE TABLE IF NOT EXISTS predicts (
+  -- predikty po novostyam i ih iskhod
   id BIGSERIAL PRIMARY KEY,
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   news_id BIGINT NOT NULL REFERENCES news(id) ON DELETE CASCADE,
@@ -37,6 +39,7 @@ CREATE TABLE IF NOT EXISTS predicts (
   result VARCHAR(20) NULL
     CHECK (result IS NULL OR result IN ('win', 'neutral', 'lose')),
   result_percent NUMERIC(14, 6) NULL,
+  profit NUMERIC(14, 6) NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'expect'
     CHECK (status IN ('expect', 'closed')),
   lag_minutes INT NOT NULL DEFAULT 60

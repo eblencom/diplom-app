@@ -11,7 +11,6 @@ import { embedRobotoCyrillic } from "@/lib/dashboard-pdf-cyrillic";
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
 
-/** Строка пользователя для экспорта (совпадает с ответом GET /api/admin/users). */
 type AdminUserExportRow = {
   id: number;
   login: string;
@@ -45,7 +44,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
   const lagLine =
     data.bestProfitLag == null
       ? "—"
-      : `${formatLagMinutes(data.bestProfitLag.lagMinutes)} · Σ ${data.bestProfitLag.sumResultPercent.toFixed(2)}% · закр. ${data.bestProfitLag.closedCount}`;
+      : `${formatLagMinutes(data.bestProfitLag.lagMinutes)} · Profit ${data.bestProfitLag.sumProfit.toFixed(2)}% · закр. ${data.bestProfitLag.closedCount}`;
   const summaryRows: (string | number)[][] = [
     ["Период", `${data.from} — ${data.to}`],
     ["Область", scopeLabel],
@@ -53,17 +52,20 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
     ["Lose (закрытые)", data.lose],
     ["Winrate", formatPct01(data.weightedWinrate)],
     ["Σ %", data.totalResultPercentSum],
+    ["Profit %", data.totalProfitSum],
     ["Прибыльный горизонт (гор.)", lagLine],
     [],
   ];
-  const header = ["Дата", "Winrate %", "Предсказаний", "Новостей", "Σ % дня", "Σ % накопит."];
+  const header = ["Дата", "Winrate %", "Предсказаний", "Новостей", "Σ % дня", "Profit дня", "Σ % накопит.", "Profit накопит."];
   const body = data.days.map((d) => [
     d.date,
     d.winrate == null ? "" : (d.winrate * 100).toFixed(2),
     d.predictions,
     d.newsCount,
     d.sumResultPercent,
+    d.sumProfit,
     d.cumulativeResultPercent,
+    d.cumulativeProfit,
   ]);
   const ws = XLSX.utils.aoa_to_sheet([...summaryRows, header, ...body]);
   const wb = XLSX.utils.book_new();
@@ -131,7 +133,6 @@ function pdfWriteParagraph(
   return y;
 }
 
-/** Таблица «по дням» с выравниванием колонок (не pipe-текст). */
 function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]): number {
   const left = 10;
   const right = 200;
@@ -156,7 +157,9 @@ function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]
     doc.text("Пред.", 74, hy, { align: "right" });
     doc.text("Нов.", 90, hy, { align: "right" });
     doc.text("Σ % дня", 118, hy, { align: "right" });
-    doc.text("Накоп. %", right - 1.5, hy, { align: "right" });
+    doc.text("Profit", 142, hy, { align: "right" });
+    doc.text("Накоп. %", 170, hy, { align: "right" });
+    doc.text("Нак. prof", right - 1.5, hy, { align: "right" });
     doc.setTextColor(28, 24, 52);
     doc.setFontSize(8);
   };
@@ -186,7 +189,9 @@ function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]
     doc.text(String(d.predictions), 74, y, { align: "right" });
     doc.text(String(d.newsCount), 90, y, { align: "right" });
     doc.text(d.sumResultPercent.toFixed(2), 118, y, { align: "right" });
-    doc.text(d.cumulativeResultPercent.toFixed(2), right - 1.5, y, { align: "right" });
+    doc.text(d.sumProfit.toFixed(2), 142, y, { align: "right" });
+    doc.text(d.cumulativeResultPercent.toFixed(2), 170, y, { align: "right" });
+    doc.text(d.cumulativeProfit.toFixed(2), right - 1.5, y, { align: "right" });
 
     doc.setDrawColor(220, 215, 240);
     doc.setLineWidth(0.05);
@@ -213,13 +218,14 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
   const lagPdf =
     data.bestProfitLag == null
       ? "Прибыльный горизонт: —"
-      : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Σ % ${data.bestProfitLag.sumResultPercent.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
+      : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Profit ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
   const lines = [
     `Период: ${data.from} — ${data.to}`,
     `Область: ${scopeLabel}`,
     `Win / Lose: ${data.win} / ${data.lose}`,
     `Winrate: ${formatPct01(data.weightedWinrate)}`,
     `Σ %: ${data.totalResultPercentSum}`,
+    `Profit %: ${data.totalProfitSum}`,
     lagPdf,
     "",
   ];
@@ -425,7 +431,22 @@ export function DashboardClient({ isAdmin }: Props) {
                   %
                 </p>
                 <p className="mt-1 text-xs leading-snug text-white/50">
-                  Сумма по закрытым в интервале
+                  Сумма result_percent
+                </p>
+              </div>
+              <div className="mt-3 rounded-lg border border-emerald-400/15 bg-emerald-500/10 px-3.5 py-3">
+                <p className="text-xs font-medium uppercase tracking-wide text-emerald-100/70">
+                  Profit %
+                </p>
+                <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-emerald-100 sm:text-2xl">
+                  {stats.totalProfitSum.toLocaleString("ru-RU", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                  %
+                </p>
+                <p className="mt-1 text-xs leading-snug text-white/50">
+                  Win положит., lose отрицат.
                 </p>
               </div>
               <div className="flex-1" aria-hidden />

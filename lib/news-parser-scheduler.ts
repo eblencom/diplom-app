@@ -12,13 +12,12 @@ declare global {
 }
 
 const PARSER_INTERVAL_MS = 60 * 1000;
-/** Частое обновление котировок для открытых предсказаний (тяжелее парсер новостей). */
 const PRICE_SYNC_INTERVAL_MS = 8 * 1000;
-/** Закрытие предиктов сразу после появления обеих цен в БД. */
 const PREDICTS_CHECK_INTERVAL_MS = 3 * 1000;
 
 function runNewsParser() {
   if (global.newsParserRunning) {
+    // uzhe krutitsya, ne dublem
     return;
   }
 
@@ -66,6 +65,7 @@ function runNewsParser() {
 
 function runNewsPriceSync() {
   if (global.newsPriceSyncRunning) {
+    // tut toje anti dublyazh
     return;
   }
 

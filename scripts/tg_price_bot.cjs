@@ -1,19 +1,3 @@
-/**
- * Telegram-бот: привязка чата `/start ЛОГИН_С_САЙТА`, рассылка цен MOEX (TQBR) раз в минуту
- * и новостей по тикерам из user_ticker_alerts — раз в 10 минут (новые за интервал или
- * текст «Новых новостей не наблюдается.»).
- *
- * Требуется в .env:
- *   DATABASE_URL=postgresql://...
- *   TELEGRAM_BOT_TOKEN=...
- *
- * Миграция курсора новостей: db/migration_tg_news_digest_cursor.sql (поле users.tg_news_last_digest_at).
- *
- * Запуск: node scripts/tg_price_bot.cjs | npm run tg-bot
- * С Next: npm run dev (или dev:no-bot без бота).
- */
-
-/* eslint-disable no-console */
 const fs = require("fs");
 const path = require("path");
 const { Pool } = require("pg");
@@ -68,7 +52,6 @@ const api = (method, body) =>
     body: body ? JSON.stringify(body) : undefined,
   });
 
-/** @returns {Promise<boolean>} */
 async function sendMessage(chatId, text) {
   const r = await api("sendMessage", {
     chat_id: chatId,
@@ -211,10 +194,6 @@ function formatNewsWhen(d) {
   }).format(date);
 }
 
-/**
- * Разбивает длинный список новостей на сообщения ≤ лимита Telegram.
- * @param {{ id: number, text: string, datetime: Date, ticker: string, company_name: string }[]} items
- */
 function buildNewsMessageChunks(items) {
   const header = "DiplomApp · новости по вашим тикерам\n";
   const maxLen = 3900;

@@ -18,10 +18,8 @@ export type MarketLexicon = {
 
 const doc = raw as MarketLexicon;
 
-/** ~1000 позитивных токенов (SentiRusColl + доменные дополнения). */
 export const MARKET_LEXICON_POSITIVE: readonly string[] = doc.positive;
 
-/** ~1000 негативных токенов. */
 export const MARKET_LEXICON_NEGATIVE: readonly string[] = doc.negative;
 
 export const marketLexiconMeta = doc.meta;

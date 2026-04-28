@@ -6,7 +6,7 @@ export type UserPredictOnNews = {
   status: "expect" | "closed";
   result: "win" | "lose" | "neutral" | null;
   resultPercent: number | null;
-  /** Минут после минуты новости (MSK) до второй точки (MOEX 1m). */
+  profit: number | null;
   lagMinutes: number;
   priceBefore: number | null;
   priceAfter: number | null;

@@ -4,9 +4,7 @@ import { useId } from "react";
 
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
 
-/** Высота области столбцов (px) */
 const PLOT_H = 168;
-/** Зарезервировано под подписи над столбцами (сейчас не используется — только оси) */
 const BAR_TOP_RESERVE = 10;
 const Y_AXIS_W = 40;
 
@@ -32,7 +30,6 @@ function shortDateLabel(iso: string): string {
   return `${d}.${m}`;
 }
 
-/** Подпись каждого дня; при длинном ряду — чуть мельче шрифт и наклон. */
 function xAxisLabelClass(nDays: number): string {
   const size = nDays > 24 ? "text-[9px]" : nDays > 14 ? "text-[10px]" : "text-xs";
   return `block max-w-full truncate text-center leading-tight text-white/60 tabular-nums ${size}`;
@@ -186,9 +183,18 @@ function CountBarBlock({
   );
 }
 
-/** Σ % по дням: ось Y от min до max, столбец зелёный/красный по знаку дня */
-function DailyResultPercentBarsFixed({ days }: { days: DashboardDayPoint[] }) {
-  const vals = days.map((d) => d.sumResultPercent);
+function DailyPercentBars({
+  days,
+  title,
+  subtitle,
+  getValue,
+}: {
+  days: DashboardDayPoint[];
+  title: string;
+  subtitle: string;
+  getValue: (d: DashboardDayPoint) => number;
+}) {
+  const vals = days.map(getValue);
   const minV = Math.min(0, ...vals);
   const maxV = Math.max(0, ...vals, minV + 1e-6);
   const span = maxV - minV || 1;
@@ -202,8 +208,8 @@ function DailyResultPercentBarsFixed({ days }: { days: DashboardDayPoint[] }) {
 
   return (
     <div className="rounded-xl border border-white/12 bg-black/30 p-3 sm:p-3.5">
-      <h3 className="text-sm font-semibold text-white/90">Σ % по дням</h3>
-      <p className="mt-1 text-xs leading-snug text-white/50">Сумма % за день</p>
+      <h3 className="text-sm font-semibold text-white/90">{title}</h3>
+      <p className="mt-1 text-xs leading-snug text-white/50">{subtitle}</p>
       <div className="mt-2 flex gap-1.5">
         <div
           className="flex shrink-0 flex-col justify-between py-1 text-right text-[11px] leading-none text-white/50"
@@ -226,7 +232,7 @@ function DailyResultPercentBarsFixed({ days }: { days: DashboardDayPoint[] }) {
             ))}
             <div className="absolute inset-x-0.5 inset-y-1 flex items-stretch gap-px">
               {days.map((d) => {
-                const raw = d.sumResultPercent;
+                const raw = getValue(d);
                 const barPx = Math.max(3, Math.round(((raw - minV) / span) * (PLOT_H - BAR_TOP_RESERVE)));
                 return (
                   <div
@@ -274,13 +280,17 @@ const RESULT_CHART_CAPTION =
 
 function CumulativeLineChart({
   days,
+  title,
+  getValue,
   className = "",
 }: {
   days: DashboardDayPoint[];
+  title: string;
+  getValue: (d: DashboardDayPoint) => number;
   className?: string;
 }) {
   const gradId = useId().replace(/:/g, "");
-  const vals = days.map((d) => d.cumulativeResultPercent);
+  const vals = days.map(getValue);
   const minV = Math.min(0, ...vals);
   const maxV = Math.max(0, ...vals);
   const span = Math.max(1e-9, maxV - minV);
@@ -297,7 +307,7 @@ function CumulativeLineChart({
 
   const pts = days.map((d, i) => {
     const x = padL + (i / Math.max(1, days.length - 1)) * innerW;
-    const y = padT + ((maxV - d.cumulativeResultPercent) / span) * innerH;
+    const y = padT + ((maxV - getValue(d)) / span) * innerH;
     return { x, y, d, i };
   });
   const dPath = pts.length ? `M ${pts.map((p) => `${p.x},${p.y}`).join(" L ")}` : "";
@@ -307,7 +317,7 @@ function CumulativeLineChart({
       className={`flex min-h-0 flex-1 flex-col rounded-xl border border-white/12 bg-black/30 p-3 sm:p-4 ${className}`}
     >
       <h3 className="text-center text-sm font-medium leading-snug text-white/85 sm:text-[15px]">
-        {RESULT_CHART_CAPTION}
+        {title}
       </h3>
       <div className="mt-3 min-h-0 flex-1 overflow-x-auto">
         <svg
@@ -315,7 +325,7 @@ function CumulativeLineChart({
           height={plotH}
           viewBox={`0 0 ${plotW} ${plotH}`}
           className="mx-auto block min-h-[260px] w-full max-w-full text-white/50 sm:min-h-[280px]"
-          aria-label={RESULT_CHART_CAPTION}
+          aria-label={title}
         >
           {yTicks.map((yt, i) => {
             const y = padT + ((maxV - yt) / span) * innerH;
@@ -395,10 +405,32 @@ export function DashboardCharts({ stats, className = "" }: Props) {
           getValue={(d) => d.newsCount}
           colorClass="bg-sky-400/85"
         />
-        <DailyResultPercentBarsFixed days={days} />
+        <DailyPercentBars
+          days={days}
+          title="Σ % по дням"
+          subtitle="Сумма result_percent за день"
+          getValue={(d) => d.sumResultPercent}
+        />
+        <DailyPercentBars
+          days={days}
+          title="Profit по дням"
+          subtitle="Сумма profit за день"
+          getValue={(d) => d.sumProfit}
+        />
       </div>
-      <div className="flex min-h-0 flex-1 flex-col">
-        <CumulativeLineChart days={days} className="min-h-[300px] flex-1 lg:min-h-[340px]" />
+      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2">
+        <CumulativeLineChart
+          days={days}
+          title={RESULT_CHART_CAPTION}
+          getValue={(d) => d.cumulativeResultPercent}
+          className="min-h-[300px] flex-1 lg:min-h-[340px]"
+        />
+        <CumulativeLineChart
+          days={days}
+          title="График profit в % за выбранный интервал"
+          getValue={(d) => d.cumulativeProfit}
+          className="min-h-[300px] flex-1 lg:min-h-[340px]"
+        />
       </div>
     </div>
   );

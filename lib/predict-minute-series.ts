@@ -8,11 +8,6 @@ import {
 
 export type MinuteSeriesPoint = { begin: string; close: number | null };
 
-/**
- * Закрытия 1m MOEX по минутам от A (floor минуты новости, MSK) до B (A + lag), включительно.
- * Первую и последнюю точки закрепляем значениями из БД (price_before / price_after), если заданы.
- * Пропуски в середине — null; клиент рисует только сегменты между известными точками.
- */
 export async function buildPredictMinuteSeries(
   ticker: string,
   newsDatetime: Date,

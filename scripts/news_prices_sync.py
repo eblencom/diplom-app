@@ -1,11 +1,3 @@
-#!/usr/bin/env python3
-"""
-MOEX TQBR 1m: для строк predicts в status=expect заполняет price_before и price_after
-по полю lag_minutes (минуты после минуты новости, MSK, floor).
-
-Дополнительно в JSON компании пишет price_before для новостей (для /api/news/:id/price),
-если в файле его ещё нет. price_after в JSON не используется для предсказаний.
-"""
 from __future__ import annotations
 
 import json
@@ -178,6 +170,7 @@ def needs_json_price_before(existing: dict[str, Any] | None) -> bool:
 
 
 def main() -> int:
+    # odin prohod po sinku cen
     db_url = load_database_url()
     if not db_url:
         log("[news-prices-sync] DATABASE_URL is not set")
@@ -188,6 +181,7 @@ def main() -> int:
 
     conn = psycopg2.connect(db_url)
     try:
+        # syuda tyanem vse novosti + kompanii
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
                 """

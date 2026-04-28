@@ -47,9 +47,7 @@ export function NewsPriceBefore({ newsId }: Props) {
           setPrice(payload.price_before);
           return;
         }
-      } catch {
-        // ignore transient errors
-      }
+      } catch {}
 
       timeoutId = window.setTimeout(() => void tick(), 2000);
     };

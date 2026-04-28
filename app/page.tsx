@@ -24,7 +24,6 @@ export default async function Home() {
 
   return (
     <>
-      {/* Фон вне потока скролла — тяжёлый blur не перерисовывается на каждый px прокрутки */}
       <div
         className="pointer-events-none fixed inset-0 z-0 overflow-hidden bg-[#05021b]"
         aria-hidden

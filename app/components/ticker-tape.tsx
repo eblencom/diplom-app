@@ -7,7 +7,6 @@ type Item = { ticker: string; name: string; price: string; source: string };
 const POLL_MS = 20_000;
 
 type TickerTapeProps = {
-  /** Доп. классы корневого блока (например отступы на лендинге) */
   className?: string;
 };
 

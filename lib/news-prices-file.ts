@@ -76,7 +76,6 @@ export async function readPriceBeforeFromFile(
   return typeof match.price_before === "number" ? match.price_before : Number(match.price_before);
 }
 
-/** Обе цены по новости в файле — иначе `null`. */
 export async function readPricePairFromFile(
   pricesPath: string | null,
   newsId: number,

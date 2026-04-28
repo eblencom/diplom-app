@@ -1,5 +1,4 @@
--- Несколько предсказаний на новость, свой lag_minutes, цены на строке predicts.
--- Выполнить один раз на существующей БД (psql или клиент).
+
 
 DROP INDEX IF EXISTS idx_predicts_user_news;
 

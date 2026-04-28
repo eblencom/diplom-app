@@ -18,6 +18,7 @@ const SESSION_COOKIE_NAME = "diplom_session";
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7;
 
 function getSessionSecretKey() {
+  // berem secret iz env, bez etogo dal'she nelzya
   const secret = process.env.SESSION_SECRET;
 
   if (!secret) {
@@ -37,6 +38,7 @@ export async function createSessionToken(payload: SessionPayload) {
 
 export async function verifySessionToken(token: string) {
   try {
+    // proverka podpisi jwt i payload
     const { payload } = await jwtVerify(token, getSessionSecretKey(), {
       algorithms: ["HS256"],
     });

@@ -1,6 +1,3 @@
--- Избранные компании и категории для фильтра новостей на главной.
--- psql: \i db/migration_user_news_favorites.sql
-
 CREATE TABLE IF NOT EXISTS user_favorite_news_companies (
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,

@@ -44,7 +44,6 @@ function splitParagraphs(text: string) {
     .filter(Boolean);
 }
 
-/** Фон карточки новости по итогам закрытых предсказаний: успех — зелёный, неуспех — красный, нейтрал — молочный. */
 function newsArticleTone(predicts: UserPredictOnNews[]) {
   const closed = predicts.filter((p) => p.status === "closed");
   if (closed.length === 0) {
@@ -125,6 +124,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
   const [newsPage, companies, winrateInitial, favoriteCompanyIds, favoriteCategories] =
     await Promise.all([
+      // tyt vse vmeste gruzim chtob ne tormozilo
       getNewsPage(currentPage, 10, session.userId, listFilters),
       getCompaniesForNewsFilter(),
       getUserWinrateStats(session.userId),
@@ -140,6 +140,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         <TickerTape />
 
         <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
+          {/* zdes prosto obshiy blok lenta+filtry */}
           <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
             Последние новости финансового мира
           </h1>
