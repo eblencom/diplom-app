@@ -8,9 +8,11 @@ import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
 import { UserWinrateCard } from "@/app/components/user-winrate-card";
+import { CompanyLogo } from "@/app/components/company-logo";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { categoryLabelsForTicker, isCategorySlug } from "@/lib/company-categories";
 import { buildHomeNewsQuery } from "@/lib/home-news-query";
+import { formatDisplayDateTime } from "@/lib/display-date";
 import {
   getUserNewsFavoriteCategorySlugs,
   getUserNewsFavoriteCompanyIds,
@@ -31,10 +33,7 @@ type HomePageProps = {
 };
 
 function formatDate(date: Date) {
-  return new Intl.DateTimeFormat("ru-RU", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(date);
+  return formatDisplayDateTime(date);
 }
 
 function splitParagraphs(text: string) {
@@ -74,7 +73,7 @@ function newsArticleTone(predicts: UserPredictOnNews[]) {
 }
 
 function newsArticleClass(tone: ReturnType<typeof newsArticleTone>) {
-  const pad = "rounded-2xl border p-4 sm:p-6";
+  const pad = "rounded-2xl border p-5 sm:p-7";
   switch (tone) {
     case "good":
       return `${pad} border-emerald-500/35 bg-gradient-to-br from-emerald-950/55 via-[#0a1a12]/92 to-black/50 shadow-[0_12px_48px_rgba(16,185,129,0.12)]`;
@@ -139,9 +138,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
         <TickerTape />
 
-        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
+        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-7 md:p-9">
           {/* zdes prosto obshiy blok lenta+filtry */}
-          <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">
+          <h1 className="text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
             Последние новости финансового мира
           </h1>
 
@@ -180,16 +179,19 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                   return (
                     <>
-                      <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div>
-                          <div className="text-sm text-white/65">{item.companyName}</div>
-                          <div className="mt-1 text-xs text-white/60">{formatDate(item.datetime)}</div>
+                          <div className="inline-flex items-center gap-2 text-base text-white/68">
+                            <CompanyLogo ticker={item.ticker} name={item.companyName} size={28} />
+                            <span>{item.companyName}</span>
+                          </div>
+                          <div className="mt-1 text-sm text-white/60">{formatDate(item.datetime)}</div>
                           {categoryTags.length > 0 && (
                             <div className="mt-2 flex flex-wrap gap-1.5">
                               {categoryTags.map((label) => (
                                 <span
                                   key={label}
-                                  className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wide text-cyan-100/90"
+                                  className="rounded-full border border-cyan-500/25 bg-cyan-500/10 px-2.5 py-1 text-xs font-medium uppercase tracking-wide text-cyan-100/90"
                                 >
                                   {label}
                                 </span>
@@ -198,7 +200,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                           )}
                         </div>
                         <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:max-w-[520px] sm:items-end sm:text-right">
-                          <div className="text-sm font-semibold text-white/90 sm:self-end">{item.ticker}</div>
+                          <div className="text-base font-semibold text-white/90 sm:self-end">{item.ticker}</div>
                           <NewsPriceBefore newsId={item.id} />
                           <TickerTradingViewLink ticker={item.ticker} />
                         </div>
@@ -206,18 +208,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
 
                       <NewsPredictPanel newsId={item.id} initialPredicts={item.predicts} />
 
-                      <p className="mt-5 mb-4 px-2 text-white/90 sm:mt-6 sm:mb-5 sm:px-4">
+                      <p className="mt-5 mb-4 px-2 text-lg leading-relaxed text-white/90 sm:mt-6 sm:mb-5 sm:px-4">
                         {firstParagraph}
                       </p>
 
                       {restParagraphs.length > 0 && (
                         <details className="mt-3 rounded-xl border border-white/10 bg-white/5 p-3">
-                          <summary className="cursor-pointer text-sm text-white/80 hover:text-white">
+                          <summary className="cursor-pointer text-base text-white/80 hover:text-white">
                             Подробнее
                           </summary>
                           <div className="mt-3 space-y-3">
                             {restParagraphs.map((paragraph, idx) => (
-                              <p key={`${item.id}-${idx}`} className="text-white/80">
+                              <p key={`${item.id}-${idx}`} className="text-base leading-relaxed text-white/80">
                                 {paragraph}
                               </p>
                             ))}
@@ -237,7 +239,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
-            <p className="text-sm text-white/65">
+            <p className="text-base text-white/65">
               Страница {newsPage.page} из {newsPage.totalPages}
             </p>
             <Link
@@ -247,13 +249,13 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 companyId: favoritesOnly ? undefined : companyId,
                 category: favoritesOnly ? undefined : categoryFilter,
               })}`}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
+              className={`rounded-full border px-5 py-2.5 text-base transition ${
                 newsPage.page <= 1
                   ? "pointer-events-none border-white/15 text-white/40"
                   : "border-white/35 text-white hover:bg-white/10"
               }`}
             >
-              Назад
+              Предыдущая
             </Link>
             <Link
               href={`/home${buildHomeNewsQuery({
@@ -262,7 +264,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 companyId: favoritesOnly ? undefined : companyId,
                 category: favoritesOnly ? undefined : categoryFilter,
               })}`}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
+              className={`rounded-full border px-5 py-2.5 text-base transition ${
                 newsPage.page >= newsPage.totalPages
                   ? "pointer-events-none border-white/15 text-white/40"
                   : "border-white/35 text-white hover:bg-white/10"

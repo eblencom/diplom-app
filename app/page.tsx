@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { AuthForm } from "@/app/auth-form";
 import { LandingHero } from "@/app/components/landing-hero";
 import {
   LandingCapabilitiesChips,
@@ -35,8 +36,10 @@ export default async function Home() {
       <main className="relative z-10 flex min-h-0 w-full max-w-full flex-col overflow-x-clip bg-transparent px-3 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))] text-white sm:px-5 sm:pt-5 md:px-6">
       <div className={`relative ${APP_CONTENT_MAX_CLASS}`}>
         <LandingHero issuersCount={companies.length} />
+        <section id="auth-block" className="scroll-mt-20 mt-10 flex justify-center sm:mt-14">
+          <AuthForm variant="landing" />
+        </section>
         <LandingCapabilitiesChips />
-
         <LandingCompaniesBlock companies={companies} sectionId="issuers" />
         <LandingNewsPreviewBlock items={newsPreview} />
         <LandingRegisterCta />

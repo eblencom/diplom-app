@@ -139,24 +139,24 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-7">
       <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-2xl border border-white/15 bg-black/20 p-4">
-          <p className="text-sm text-white/60">Текущий логин</p>
-          <p className="text-lg font-medium">{currentLogin}</p>
+        <div className="rounded-2xl border border-white/15 bg-black/20 p-5">
+          <p className="text-base text-white/60">Текущий логин</p>
+          <p className="mt-1 text-2xl font-medium">{currentLogin}</p>
         </div>
-        <div className="rounded-2xl border border-white/15 bg-black/20 p-4">
-          <p className="text-sm text-white/60">Роль</p>
-          <p className="text-lg font-medium">{roleLabel[role]}</p>
+        <div className="rounded-2xl border border-white/15 bg-black/20 p-5">
+          <p className="text-base text-white/60">Роль</p>
+          <p className="mt-1 text-2xl font-medium">{roleLabel[role]}</p>
         </div>
       </div>
 
       <form
         onSubmit={handleLoginSubmit}
-        className="rounded-2xl border border-white/15 bg-black/20 p-5"
+        className="rounded-2xl border border-white/15 bg-black/20 p-6"
       >
-        <h2 className="text-xl font-semibold">Изменить логин</h2>
-        <p className="mt-1 text-sm text-white/65">
+        <h2 className="text-2xl font-semibold">Изменить логин</h2>
+        <p className="mt-2 text-base text-white/65">
           Для подтверждения введите текущий пароль.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-2">
@@ -168,7 +168,7 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={newLogin}
             onChange={(event) => setNewLogin(event.target.value)}
             placeholder="Новый логин"
-            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
+            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-lg text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
           />
           <input
             required
@@ -177,16 +177,16 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={loginPassword}
             onChange={(event) => setLoginPassword(event.target.value)}
             placeholder="Текущий пароль"
-            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
+            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-lg text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
           />
         </div>
         {loginMessage && (
-          <p className="mt-3 text-sm text-white/80">{loginMessage}</p>
+          <p className="mt-3 text-base text-white/80">{loginMessage}</p>
         )}
         <button
           disabled={loginPending}
           type="submit"
-          className="mt-4 rounded-full border border-white/40 px-4 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 rounded-full border border-white/40 px-5 py-2.5 text-base transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loginPending ? "Сохранение..." : "Сохранить логин"}
         </button>
@@ -194,10 +194,10 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
 
       <form
         onSubmit={handlePasswordSubmit}
-        className="rounded-2xl border border-white/15 bg-black/20 p-5"
+        className="rounded-2xl border border-white/15 bg-black/20 p-6"
       >
-        <h2 className="text-xl font-semibold">Изменить пароль</h2>
-        <p className="mt-1 text-sm text-white/65">
+        <h2 className="text-2xl font-semibold">Изменить пароль</h2>
+        <p className="mt-2 text-base text-white/65">
           Требуется подтверждение текущим паролем.
         </p>
         <div className="mt-4 grid gap-3 md:grid-cols-3">
@@ -208,7 +208,7 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={currentPassword}
             onChange={(event) => setCurrentPassword(event.target.value)}
             placeholder="Текущий пароль"
-            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
+            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-lg text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
           />
           <input
             required
@@ -217,7 +217,7 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
             placeholder="Новый пароль"
-            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
+            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-lg text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
           />
           <input
             required
@@ -226,16 +226,16 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={confirmNewPassword}
             onChange={(event) => setConfirmNewPassword(event.target.value)}
             placeholder="Подтвердите пароль"
-            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
+            className="rounded-xl border border-white/20 bg-[#151046] px-4 py-3 text-lg text-white outline-none ring-violet-500/50 placeholder:text-white/35 focus:ring-2"
           />
         </div>
         {passwordMessage && (
-          <p className="mt-3 text-sm text-white/80">{passwordMessage}</p>
+          <p className="mt-3 text-base text-white/80">{passwordMessage}</p>
         )}
         <button
           disabled={passwordPending}
           type="submit"
-          className="mt-4 rounded-full border border-white/40 px-4 py-2 text-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 rounded-full border border-white/40 px-5 py-2.5 text-base transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {passwordPending ? "Сохранение..." : "Сохранить пароль"}
         </button>
@@ -243,10 +243,10 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
 
       <form
         onSubmit={handleDeleteSubmit}
-        className="rounded-2xl border border-red-300/35 bg-red-900/15 p-5"
+        className="rounded-2xl border border-red-300/35 bg-red-900/15 p-6"
       >
-        <h2 className="text-xl font-semibold text-red-200">Удаление аккаунта</h2>
-        <p className="mt-1 text-sm text-red-100/85">
+        <h2 className="text-2xl font-semibold text-red-200">Удаление аккаунта</h2>
+        <p className="mt-2 text-base text-red-100/85">
           Аккаунт будет полностью удален из базы данных.
         </p>
         <div className="mt-4 max-w-xl">
@@ -257,16 +257,16 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
             value={deletePassword}
             onChange={(event) => setDeletePassword(event.target.value)}
             placeholder="Введите пароль для подтверждения"
-            className="w-full rounded-xl border border-red-200/35 bg-[#2a123f] px-4 py-3 text-white outline-none ring-red-300/60 placeholder:text-white/40 focus:ring-2"
+            className="w-full rounded-xl border border-red-200/35 bg-[#2a123f] px-4 py-3 text-lg text-white outline-none ring-red-300/60 placeholder:text-white/40 focus:ring-2"
           />
         </div>
         {deleteMessage && (
-          <p className="mt-3 text-sm text-red-100">{deleteMessage}</p>
+          <p className="mt-3 text-base text-red-100">{deleteMessage}</p>
         )}
         <button
           disabled={deletePending}
           type="submit"
-          className="mt-4 rounded-full border border-red-200/50 bg-red-700/70 px-4 py-2 text-sm text-white transition hover:bg-red-700/90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="mt-4 rounded-full border border-red-200/50 bg-red-700/70 px-5 py-2.5 text-base text-white transition hover:bg-red-700/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {deletePending ? "Удаление..." : "Удалить аккаунт"}
         </button>

@@ -7,7 +7,10 @@ CREATE TABLE IF NOT EXISTS users (
   is_blocked BOOLEAN NOT NULL DEFAULT false,
   tg_username VARCHAR(255) NOT NULL DEFAULT '',
   tg_chat_id BIGINT NULL,
-  tg_news_last_digest_at TIMESTAMP NULL
+  tg_price_last_digest_at TIMESTAMP NULL,
+  tg_news_last_digest_at TIMESTAMP NULL,
+  tg_news_interval_minutes INT NOT NULL DEFAULT 10
+    CHECK (tg_news_interval_minutes >= 1 AND tg_news_interval_minutes <= 1440)
 );
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -28,6 +31,9 @@ CREATE TABLE IF NOT EXISTS news (
 
 CREATE INDEX IF NOT EXISTS idx_news_company_datetime
 ON news (company_id, datetime DESC);
+
+CREATE INDEX IF NOT EXISTS idx_news_datetime
+ON news (datetime DESC);
 
 CREATE TABLE IF NOT EXISTS predicts (
   -- predikty po novostyam i ih iskhod
@@ -53,6 +59,17 @@ ON predicts (user_id, news_id);
 
 CREATE INDEX IF NOT EXISTS idx_predicts_status
 ON predicts (status);
+
+CREATE INDEX IF NOT EXISTS idx_predicts_news_user
+ON predicts (news_id, user_id);
+
+CREATE INDEX IF NOT EXISTS idx_predicts_closed_lag_profit
+ON predicts (lag_minutes, profit)
+WHERE status = 'closed' AND profit IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_predicts_expect_prices
+ON predicts (id)
+WHERE status = 'expect' AND price_before IS NOT NULL AND price_after IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS user_ticker_alerts (
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,

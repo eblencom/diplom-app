@@ -65,10 +65,12 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
   const isLanding = variant === "landing";
 
   const sectionClass = isLanding
-    ? "relative isolate z-10 mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-white/20 p-4 shadow-lg backdrop-blur-md transition-[border-color,box-shadow] duration-500 ease-out sm:p-6"
+    ? "relative isolate z-10 w-full max-w-lg overflow-hidden rounded-2xl border border-white/20 p-5 shadow-lg backdrop-blur-md transition-[border-color,box-shadow] duration-500 ease-out sm:p-7"
     : "relative z-10 mx-auto w-full max-w-xl rounded-3xl border border-white/15 bg-[#0f0a35]/80 p-7 shadow-[0_20px_80px_rgba(90,24,255,0.35)] backdrop-blur-xl";
 
-  const inputClass = `w-full min-h-11 rounded-xl border border-white/20 bg-[#151046] text-base text-white outline-none ring-violet-500/50 transition-shadow duration-300 placeholder:text-white/30 focus:ring-2 sm:min-h-0 ${isLanding ? "px-3 py-2.5 sm:text-sm" : "px-4 py-3"}`;
+  const inputClass = `w-full min-h-11 rounded-xl border border-white/20 bg-[#151046] text-base text-white outline-none ring-violet-500/50 transition-shadow duration-300 placeholder:text-white/30 focus:ring-2 sm:min-h-0 ${isLanding ? "px-4 py-3 sm:text-base" : "px-4 py-3"}`;
+  const landingGap = "gap-3.5";
+  const landingFormGap = "space-y-3.5";
 
   return (
     <section className={`${sectionClass}${className ? ` ${className}` : ""}`}>
@@ -87,9 +89,10 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
         </>
       ) : null}
 
-      <div className="relative z-10">
+      <div className={`relative z-10 ${isLanding ? "flex items-center" : ""}`}>
+        <div className={isLanding ? `flex w-full flex-col ${landingGap}` : ""}>
         <div
-          className={`relative flex rounded-full border border-white/20 p-1 ${isLanding ? "mb-4 bg-black/30" : "mb-6 bg-black/25"}`}
+          className={`relative flex rounded-full border border-white/20 p-1 ${isLanding ? "bg-black/30" : "mb-6 bg-black/25"}`}
         >
           {isLanding ? (
             <span
@@ -102,7 +105,7 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
           ) : null}
           <button
             type="button"
-            className={`relative z-10 min-h-11 w-1/2 rounded-full px-3 py-2.5 text-sm transition sm:min-h-0 sm:px-4 sm:py-2 ${
+            className={`relative z-10 min-h-11 w-1/2 rounded-full px-3 py-2.5 text-base transition sm:min-h-0 sm:px-4 sm:py-2.5 ${
               mode === "login"
                 ? isLanding
                   ? "text-[#0d0d22]"
@@ -115,7 +118,7 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
           </button>
           <button
             type="button"
-            className={`relative z-10 min-h-11 w-1/2 rounded-full px-3 py-2.5 text-sm transition sm:min-h-0 sm:px-4 sm:py-2 ${
+            className={`relative z-10 min-h-11 w-1/2 rounded-full px-3 py-2.5 text-base transition sm:min-h-0 sm:px-4 sm:py-2.5 ${
               mode === "register"
                 ? isLanding
                   ? "text-[#0d0d22]"
@@ -129,19 +132,19 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
         </div>
 
         <h2
-          className={`font-semibold text-white ${isLanding ? "min-h-[3.25rem] text-2xl leading-tight transition-colors duration-300 sm:min-h-[2.75rem]" : "min-h-[2.5rem] text-3xl leading-tight"}`}
+          className={`font-semibold text-white ${isLanding ? "text-3xl leading-tight transition-colors duration-300" : "min-h-[2.5rem] text-3xl leading-tight"}`}
         >
           {title}
         </h2>
         <p
-          className={`text-white/65 transition-colors duration-300 ${isLanding ? "mt-1.5 min-h-[2.75rem] text-xs leading-relaxed sm:min-h-[2.5rem]" : "mt-2 min-h-[2.75rem] text-sm leading-relaxed"}`}
+          className={`text-white/65 transition-colors duration-300 ${isLanding ? "text-sm leading-relaxed sm:text-base" : "mt-2 min-h-[2.75rem] text-sm leading-relaxed"}`}
         >
           Логин и пароль — латиница, цифры и символ «_».
         </p>
 
         <form
           onSubmit={handleSubmit}
-          className={isLanding ? "mt-4 space-y-3" : "mt-6 space-y-4"}
+          className={isLanding ? `${landingFormGap} flex-1` : "mt-6 space-y-4"}
         >
           <label className="block">
             <span className="sr-only">Логин</span>
@@ -175,7 +178,7 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
           </label>
 
           {isLanding ? (
-            <div className="relative min-h-[2.75rem] sm:min-h-[2.625rem]">
+            <div className="relative min-h-[3rem]">
               <div
                 className="absolute inset-0 flex items-center transition-opacity duration-300 ease-out"
                 style={{
@@ -183,7 +186,7 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
                   pointerEvents: mode === "login" ? "auto" : "none",
                 }}
               >
-                <p className="w-full rounded-xl border border-cyan-400/25 bg-cyan-500/[0.08] px-3 py-2.5 text-left text-[11px] leading-snug text-cyan-100/95 transition-[border-color,background-color] duration-300 sm:text-xs">
+                <p className="w-full rounded-xl border border-cyan-400/25 bg-cyan-500/[0.08] px-3 py-2.5 text-left text-sm leading-snug text-cyan-100/95 transition-[border-color,background-color] duration-300">
                   Вы тут впервые? Тогда жмите на кнопку «Регистрация»!
                 </p>
               </div>
@@ -227,22 +230,23 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
             </label>
           ) : null}
 
-          <div className={isLanding ? "min-h-[2.75rem]" : "min-h-[3rem]"}>
+          <button
+            disabled={pending}
+            type="submit"
+            className={`w-full min-h-11 rounded-full border border-white/50 bg-white text-base font-semibold text-[#16153d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 ${isLanding ? "px-5 py-3 sm:text-base" : "px-5 py-3 sm:text-sm"}`}
+          >
+            {pending ? "Подождите..." : submitLabel}
+          </button>
+
+          <div className={isLanding ? "" : "min-h-[3rem]"}>
             {error ? (
               <p className="rounded-lg border border-red-300/40 bg-red-500/15 px-3 py-2 text-sm text-red-200 transition-opacity duration-200">
                 {error}
               </p>
             ) : null}
           </div>
-
-          <button
-            disabled={pending}
-            type="submit"
-            className={`w-full min-h-11 rounded-full border border-white/50 bg-white text-base font-semibold text-[#16153d] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-0 ${isLanding ? "px-4 py-2.5 sm:text-sm" : "px-5 py-3 sm:text-sm"}`}
-          >
-            {pending ? "Подождите..." : submitLabel}
-          </button>
         </form>
+        </div>
       </div>
     </section>
   );

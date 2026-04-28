@@ -2,7 +2,7 @@
 
 html {
   overflow-x: clip;
-  scroll-behavior: auto;
+  scroll-behavior: smooth;
 }
 html:not(.home-scrollbar) {
   scrollbar-width: none;

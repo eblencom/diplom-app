@@ -9,6 +9,7 @@ import { DashboardCompanyPredictBars } from "@/app/components/dashboard-company-
 import { WinLoseDonut } from "@/app/components/win-lose-donut";
 import { embedRobotoCyrillic } from "@/lib/dashboard-pdf-cyrillic";
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
+import { formatDisplayYmd, parseDisplayDateToYmd } from "@/lib/display-date";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
 
 type AdminUserExportRow = {
@@ -19,7 +20,7 @@ type AdminUserExportRow = {
 };
 
 const PANEL =
-  "rounded-xl border border-white/15 bg-black/20 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-5";
+  "rounded-xl border border-white/15 bg-black/20 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-6";
 
 function defaultToYmd(): string {
   return new Date().toISOString().slice(0, 10);
@@ -38,6 +39,35 @@ function formatPct01(x: number | null) {
   return `${(x * 100).toFixed(1)}%`;
 }
 
+function formatSignedPercent(value: number) {
+  return value.toLocaleString("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+function MetricCard({
+  title,
+  value,
+  note,
+  className = "border-white/10 bg-white/5 text-cyan-100",
+}: {
+  title: string;
+  value: number;
+  note: string;
+  className?: string;
+}) {
+  return (
+    <div className={`rounded-xl border px-4 py-4 ${className}`}>
+      <p className="text-sm font-medium uppercase tracking-wide text-white/65">{title}</p>
+      <p className="mt-1 font-mono text-2xl font-semibold tabular-nums sm:text-3xl">
+        {formatSignedPercent(value)}%
+      </p>
+      <p className="mt-1 text-sm leading-snug text-white/55">{note}</p>
+    </div>
+  );
+}
+
 async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUserExportRow[] | null) {
   const XLSX = await import("xlsx");
   const scopeLabel = data.scope === "all" ? "Все пользователи (админ)" : "Текущий пользователь";
@@ -46,7 +76,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
       ? "—"
       : `${formatLagMinutes(data.bestProfitLag.lagMinutes)} · Profit ${data.bestProfitLag.sumProfit.toFixed(2)}% · закр. ${data.bestProfitLag.closedCount}`;
   const summaryRows: (string | number)[][] = [
-    ["Период", `${data.from} — ${data.to}`],
+    ["Период", `${formatDisplayYmd(data.from)} — ${formatDisplayYmd(data.to)}`],
     ["Область", scopeLabel],
     ["Win (закрытые)", data.win],
     ["Lose (закрытые)", data.lose],
@@ -58,7 +88,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
   ];
   const header = ["Дата", "Winrate %", "Предсказаний", "Новостей", "Σ % дня", "Profit дня", "Σ % накопит.", "Profit накопит."];
   const body = data.days.map((d) => [
-    d.date,
+    formatDisplayYmd(d.date),
     d.winrate == null ? "" : (d.winrate * 100).toFixed(2),
     d.predictions,
     d.newsCount,
@@ -184,7 +214,7 @@ function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]
 
     const wr =
       d.winrate == null ? "—" : `${(d.winrate * 100).toFixed(1)}%`;
-    doc.text(d.date, left + 1.5, y);
+    doc.text(formatDisplayYmd(d.date), left + 1.5, y);
     doc.text(wr, 54, y, { align: "right" });
     doc.text(String(d.predictions), 74, y, { align: "right" });
     doc.text(String(d.newsCount), 90, y, { align: "right" });
@@ -220,7 +250,7 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
       ? "Прибыльный горизонт: —"
       : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Profit ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
   const lines = [
-    `Период: ${data.from} — ${data.to}`,
+    `Период: ${formatDisplayYmd(data.from)} — ${formatDisplayYmd(data.to)}`,
     `Область: ${scopeLabel}`,
     `Win / Lose: ${data.win} / ${data.lose}`,
     `Winrate: ${formatPct01(data.weightedWinrate)}`,
@@ -277,9 +307,45 @@ type Props = {
 export function DashboardClient({ isAdmin }: Props) {
   const [from, setFrom] = useState(defaultFromYmd);
   const [to, setTo] = useState(defaultToYmd);
+  const [fromDraft, setFromDraft] = useState(() => formatDisplayYmd(defaultFromYmd()));
+  const [toDraft, setToDraft] = useState(() => formatDisplayYmd(defaultToYmd()));
   const [stats, setStats] = useState<DashboardStatsPayload | null>(null);
+  const [adminUsers, setAdminUsers] = useState<AdminUserExportRow[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState("all");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
+
+  useEffect(() => {
+    if (!isAdmin) {
+      return;
+    }
+    let alive = true;
+    async function loadUsers() {
+      try {
+        const response = await fetch("/api/admin/users", { credentials: "include", cache: "no-store" });
+        const data = (await response.json()) as { users?: AdminUserExportRow[] };
+        if (alive && response.ok) {
+          setAdminUsers(data.users ?? []);
+        }
+      } catch {
+        if (alive) {
+          setAdminUsers([]);
+        }
+      }
+    }
+    void loadUsers();
+    return () => {
+      alive = false;
+    };
+  }, [isAdmin]);
+
+  useEffect(() => {
+    setFromDraft(formatDisplayYmd(from));
+  }, [from]);
+
+  useEffect(() => {
+    setToDraft(formatDisplayYmd(to));
+  }, [to]);
 
   const load = useCallback(async () => {
     if (!from || !to || from > to) {
@@ -291,8 +357,12 @@ export function DashboardClient({ isAdmin }: Props) {
     setError(null);
     setPending(true);
     try {
+      const params = new URLSearchParams({ from, to });
+      if (isAdmin && selectedUserId !== "all") {
+        params.set("userId", selectedUserId);
+      }
       const response = await fetch(
-        `/api/dashboard/stats?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+        `/api/dashboard/stats?${params.toString()}`,
         { credentials: "include", cache: "no-store" },
       );
       const raw = (await response.json()) as DashboardStatsPayload | { error?: string };
@@ -308,7 +378,7 @@ export function DashboardClient({ isAdmin }: Props) {
     } finally {
       setPending(false);
     }
-  }, [from, to]);
+  }, [from, to, isAdmin, selectedUserId]);
 
   useEffect(() => {
     void load();
@@ -339,41 +409,98 @@ export function DashboardClient({ isAdmin }: Props) {
     [stats, isAdmin],
   );
 
-  const animKey = `${from}|${to}|${stats?.win ?? 0}-${stats?.lose ?? 0}`;
+  const selectedAdminUser = adminUsers.find((u) => String(u.id) === selectedUserId);
+  const adminStatsTitle =
+    selectedUserId === "all"
+      ? "Общая статистика по всем пользователям"
+      : `Статистика пользователя ${selectedAdminUser?.login ?? selectedUserId}`;
+  const animKey = `${from}|${to}|${selectedUserId}|${stats?.win ?? 0}-${stats?.lose ?? 0}`;
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-white/12 bg-[#0c0824]/60 p-4 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-5">
+    <div className="space-y-5">
+      <div className="rounded-xl border border-white/12 bg-[#0c0824]/60 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-6">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0 flex-1">
-            <h2 className="text-lg font-semibold text-white">Интервал и экспорт</h2>
-            <p className="mt-1 text-sm leading-snug text-white/55">
+            <h2 className="text-2xl font-semibold text-white sm:text-3xl">Интервал и экспорт</h2>
+            <p className="mt-2 text-base leading-snug text-white/60">
               Предсказания по дате новости.
-              {isAdmin ? " Админ: агрегат по всем пользователям." : ""}
+              {isAdmin ? " Админ может смотреть всех пользователей или выбранного аналитика." : ""}
             </p>
+            {isAdmin ? (
+              <h3 className="mt-4 text-2xl font-semibold text-cyan-100 sm:text-3xl">
+                {adminStatsTitle}
+              </h3>
+            ) : null}
             <div className="mt-3 flex flex-wrap items-end gap-3">
-              <label className="block text-sm">
-                <span className="text-white/60">С</span>
+              <label className="flex items-center gap-2 text-base">
+                <span className="text-white/70">С</span>
                 <input
-                  type="date"
-                  value={from}
-                  onChange={(e) => setFrom(e.target.value)}
-                  className="mt-1 block rounded-lg border border-white/20 bg-[#151046] px-2.5 py-2 text-base text-white"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="дд/мм/гггг"
+                  maxLength={10}
+                  value={fromDraft}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setFromDraft(next);
+                    const parsed = parseDisplayDateToYmd(next);
+                    if (parsed) {
+                      setFrom(parsed);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!parseDisplayDateToYmd(fromDraft)) {
+                      setFromDraft(formatDisplayYmd(from));
+                    }
+                  }}
+                  className="block w-36 rounded-lg border border-white/20 bg-[#151046] px-3 py-2.5 text-lg text-white"
                 />
               </label>
-              <label className="block text-sm">
-                <span className="text-white/60">По</span>
+              <label className="flex items-center gap-2 text-base">
+                <span className="text-white/70">По</span>
                 <input
-                  type="date"
-                  value={to}
-                  onChange={(e) => setTo(e.target.value)}
-                  className="mt-1 block rounded-lg border border-white/20 bg-[#151046] px-2.5 py-2 text-base text-white"
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="дд/мм/гггг"
+                  maxLength={10}
+                  value={toDraft}
+                  onChange={(e) => {
+                    const next = e.target.value;
+                    setToDraft(next);
+                    const parsed = parseDisplayDateToYmd(next);
+                    if (parsed) {
+                      setTo(parsed);
+                    }
+                  }}
+                  onBlur={() => {
+                    if (!parseDisplayDateToYmd(toDraft)) {
+                      setToDraft(formatDisplayYmd(to));
+                    }
+                  }}
+                  className="block w-36 rounded-lg border border-white/20 bg-[#151046] px-3 py-2.5 text-lg text-white"
                 />
               </label>
+              {isAdmin ? (
+                <label className="flex items-center gap-2 text-base">
+                  <span className="text-white/70">Пользователь</span>
+                  <select
+                    value={selectedUserId}
+                    onChange={(e) => setSelectedUserId(e.target.value)}
+                    className="block min-w-56 rounded-lg border border-white/20 bg-[#151046] px-3 py-2.5 text-lg text-white"
+                  >
+                    <option value="all">Все пользователи</option>
+                    {adminUsers.map((user) => (
+                      <option key={user.id} value={String(user.id)}>
+                        {user.login} ({user.role === "admin" ? "админ" : "аналитик"})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
               <button
                 type="button"
                 onClick={() => void load()}
-                className="rounded-full border border-white/30 px-4 py-2 text-sm font-medium text-white/90 hover:bg-white/10"
+                className="rounded-full border border-white/30 px-5 py-2.5 text-base font-medium text-white/90 hover:bg-white/10"
               >
                 Обновить
               </button>
@@ -384,7 +511,7 @@ export function DashboardClient({ isAdmin }: Props) {
               type="button"
               disabled={!stats || exporting}
               onClick={() => void onExport("xlsx")}
-              className="rounded-full border border-emerald-400/45 bg-emerald-600/25 px-5 py-2.5 text-sm font-semibold text-emerald-50 shadow-sm transition hover:bg-emerald-600/35 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-emerald-400/45 bg-emerald-600/25 px-5 py-2.5 text-base font-semibold text-emerald-50 shadow-sm transition hover:bg-emerald-600/35 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Экспорт Excel
             </button>
@@ -392,62 +519,51 @@ export function DashboardClient({ isAdmin }: Props) {
               type="button"
               disabled={!stats || exporting}
               onClick={() => void onExport("pdf")}
-              className="rounded-full border border-rose-400/45 bg-rose-600/25 px-5 py-2.5 text-sm font-semibold text-rose-50 shadow-sm transition hover:bg-rose-600/35 disabled:cursor-not-allowed disabled:opacity-40"
+              className="rounded-full border border-rose-400/45 bg-rose-600/25 px-5 py-2.5 text-base font-semibold text-rose-50 shadow-sm transition hover:bg-rose-600/35 disabled:cursor-not-allowed disabled:opacity-40"
             >
               Экспорт PDF
             </button>
           </div>
         </div>
-        {error && <p className="mt-2 text-sm text-rose-300/90">{error}</p>}
+        {error && <p className="mt-3 text-base text-rose-300/90">{error}</p>}
       </div>
 
       <div
         key={animKey}
-        className="grid gap-4 transition-all duration-500 ease-out lg:grid-cols-[min(288px,100%)_1fr] lg:items-stretch"
+        className="grid gap-5 transition-all duration-500 ease-out lg:grid-cols-[min(330px,100%)_1fr] lg:items-stretch"
         style={{ opacity: pending ? 0.55 : 1 }}
       >
         <div className={`${PANEL} flex h-full min-h-0 flex-col`}>
           {stats && (
             <>
-              <p className="text-sm font-semibold uppercase tracking-wide text-white/60">
+              <p className="text-base font-semibold uppercase tracking-wide text-white/65">
                 Винрейт
               </p>
-              <p className="mt-1.5 text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              <p className="mt-1.5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                 {formatPct01(stats.weightedWinrate)}
               </p>
-              <WinLoseDonut win={stats.win} lose={stats.lose} className="mt-4 max-w-[220px]" />
+              <WinLoseDonut win={stats.win} lose={stats.lose} className="mx-auto mt-4 max-w-[220px]" />
               <DashboardCompanyPredictBars
                 items={stats.companyPredictCounts ?? []}
                 bestProfitLag={stats.bestProfitLag ?? null}
                 className="mt-3"
               />
-              <div className="mt-4 rounded-lg border border-white/10 bg-white/5 px-3.5 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-white/55">Σ %</p>
-                <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-cyan-100 sm:text-2xl">
-                  {stats.totalResultPercentSum.toLocaleString("ru-RU", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                  %
-                </p>
-                <p className="mt-1 text-xs leading-snug text-white/50">
-                  Сумма result_percent
-                </p>
-              </div>
-              <div className="mt-3 rounded-lg border border-emerald-400/15 bg-emerald-500/10 px-3.5 py-3">
-                <p className="text-xs font-medium uppercase tracking-wide text-emerald-100/70">
-                  Profit %
-                </p>
-                <p className="mt-1 font-mono text-xl font-semibold tabular-nums text-emerald-100 sm:text-2xl">
-                  {stats.totalProfitSum.toLocaleString("ru-RU", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                  %
-                </p>
-                <p className="mt-1 text-xs leading-snug text-white/50">
-                  Win положит., lose отрицат.
-                </p>
+              <div className="mt-4 space-y-3">
+                <MetricCard
+                  title="Σ %"
+                  value={stats.totalResultPercentSum}
+                  note="Сумма result_percent"
+                />
+                <MetricCard
+                  title="Profit %"
+                  value={stats.totalProfitSum}
+                  note="Win положит., lose отрицат."
+                  className={
+                    stats.totalProfitSum < 0
+                      ? "border-rose-400/20 bg-rose-500/15 text-rose-100"
+                      : "border-emerald-400/20 bg-emerald-500/15 text-emerald-100"
+                  }
+                />
               </div>
               <div className="flex-1" aria-hidden />
             </>

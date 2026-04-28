@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { CompanyLogo } from "@/app/components/company-logo";
 
 type Item = { ticker: string; name: string; price: string; source: string };
 
@@ -73,7 +74,8 @@ export function TickerTape({ className }: TickerTapeProps) {
           }}
         >
           {doubled.map((it, idx) => (
-            <span key={`${it.ticker}-${idx}`} className="inline-flex items-baseline gap-2 font-mono">
+            <span key={`${it.ticker}-${idx}`} className="inline-flex items-center gap-2 font-mono">
+              <CompanyLogo ticker={it.ticker} name={it.name} size={22} />
               <span className="font-semibold text-emerald-200/95">{it.ticker}</span>
               <span className="text-white/90">{it.price}</span>
               <span className="text-[10px] text-white/35">{it.name.slice(0, 18)}</span>

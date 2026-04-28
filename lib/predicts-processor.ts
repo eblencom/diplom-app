@@ -14,6 +14,14 @@ function normalizeId(value: number | string) {
   return typeof value === "number" ? value : Number(value);
 }
 
+function numberOrNaN(value: string | number | null) {
+  if (value === null || value === undefined) {
+    return NaN;
+  }
+
+  return typeof value === "number" ? value : Number(value);
+}
+
 export async function closeExpectingPredicts(): Promise<number> {
   const result = await sql<ExpectRow>(
     `
@@ -35,18 +43,8 @@ export async function closeExpectingPredicts(): Promise<number> {
     const predictId = normalizeId(row.id);
     const prediction = row.prediction as PredictionKind;
 
-    const before =
-      row.price_before === null || row.price_before === undefined
-        ? NaN
-        : typeof row.price_before === "number"
-          ? row.price_before
-          : Number(row.price_before);
-    const after =
-      row.price_after === null || row.price_after === undefined
-        ? NaN
-        : typeof row.price_after === "number"
-          ? row.price_after
-          : Number(row.price_after);
+    const before = numberOrNaN(row.price_before);
+    const after = numberOrNaN(row.price_after);
     if (!Number.isFinite(before) || !Number.isFinite(after)) {
       continue;
     }

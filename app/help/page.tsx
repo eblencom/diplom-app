@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/app/components/app-header";
-import { BackNavButton } from "@/app/components/back-nav-button";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { getCurrentSession } from "@/lib/session";
 
@@ -35,10 +34,6 @@ export default async function HelpPage() {
     <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#05021b] px-4 py-6 text-white sm:px-6 sm:py-8">
       <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
-
-        <div className="mb-4 sm:mb-6">
-          <BackNavButton />
-        </div>
 
         <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
           <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">Справочная система</h1>

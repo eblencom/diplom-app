@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import { WinLoseDonut } from "@/app/components/win-lose-donut";
+import { formatDisplayDateTime } from "@/lib/display-date";
 import type { UserWinrateStats } from "@/lib/user-winrate-model";
 
 const POLL_MS = 4_000;
@@ -27,10 +28,7 @@ function formatOldestNewsHuman(iso: string | null) {
   if (Number.isNaN(d.getTime())) {
     return "—";
   }
-  return new Intl.DateTimeFormat("ru-RU", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(d);
+  return formatDisplayDateTime(d);
 }
 
 export function UserWinrateCard({ initial }: Props) {

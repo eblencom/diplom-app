@@ -27,7 +27,7 @@ export function LogoutButton({ className }: LogoutButtonProps) {
       type="button"
       onClick={logout}
       disabled={pending}
-      className={`inline-flex items-center justify-center rounded-full border border-rose-500/70 bg-rose-600/90 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-rose-500 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 ${className ?? ""}`}
+      className={`inline-flex items-center justify-center rounded-full border border-rose-500/70 bg-rose-600/90 px-4 py-2 text-base font-medium text-white shadow-sm transition hover:bg-rose-500 hover:shadow disabled:cursor-not-allowed disabled:opacity-50 ${className ?? ""}`}
     >
       {pending ? "Выход..." : "Выйти"}
     </button>

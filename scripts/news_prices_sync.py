@@ -44,6 +44,12 @@ def log(msg: str) -> None:
     print(msg, flush=True)
 
 
+def optional_float(value: Any) -> float | None:
+    if value is None:
+        return None
+    return float(value)
+
+
 def to_msk(dt: datetime) -> datetime:
     if dt.tzinfo is None:
         return dt.replace(tzinfo=MSK)
@@ -240,12 +246,8 @@ def main() -> int:
                     news_id=int(r["news_id"]),
                     lag_minutes=lag,
                     published_at=r["published_at"],
-                    price_before=float(r["price_before"])
-                    if r.get("price_before") is not None
-                    else None,
-                    price_after=float(r["price_after"])
-                    if r.get("price_after") is not None
-                    else None,
+                    price_before=optional_float(r.get("price_before")),
+                    price_after=optional_float(r.get("price_after")),
                     company_id=int(r["company_id"]),
                     ticker=ticker,
                     prices_path=r.get("prices_path"),

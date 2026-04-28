@@ -12,10 +12,20 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const from = searchParams.get("from") ?? "";
   const to = searchParams.get("to") ?? "";
+  const userParam = searchParams.get("userId");
+  const selectedUserId =
+    session.role === "admin" && userParam && userParam !== "all"
+      ? Math.round(Number(userParam))
+      : null;
+
+  if (selectedUserId != null && (!Number.isFinite(selectedUserId) || selectedUserId < 1)) {
+    return NextResponse.json({ error: "bad_user" }, { status: 400 });
+  }
 
   const result = await getDashboardStats({
     userId: session.userId,
     isAdmin: session.role === "admin",
+    selectedUserId,
     from,
     to,
   });

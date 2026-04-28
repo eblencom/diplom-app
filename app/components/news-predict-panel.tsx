@@ -211,17 +211,17 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
   };
 
   return (
-    <div className="mt-3 border-t border-white/10 pt-3">
-      <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
-        <p className="text-xs font-medium text-white/70">Новое предсказание</p>
+    <div className="mt-4 border-t border-white/10 pt-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+        <p className="text-base font-medium text-white/75">Новое предсказание</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
-          <label className="flex flex-col gap-1 text-xs text-white/60">
+          <label className="flex flex-col gap-1.5 text-sm text-white/60">
             Горизонт
             <select
               value={lagMinutes}
               onChange={(e) => setLagMinutes(Number(e.target.value))}
               disabled={!canAddMore}
-              className="rounded-lg border border-white/20 bg-[#151046] px-3 py-2 text-sm text-white outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50"
+              className="rounded-lg border border-white/20 bg-[#151046] px-3.5 py-2.5 text-base text-white outline-none focus:ring-2 focus:ring-violet-500/40 disabled:opacity-50"
             >
               {LAG_PRESETS.map((m) => (
                 <option key={m} value={m} disabled={usedLags.has(m)}>
@@ -235,13 +235,13 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
             type="button"
             disabled={busy || !canAddMore || usedLags.has(lagMinutes)}
             onClick={() => void onAddPredict()}
-            className="rounded-full border border-violet-400/50 bg-violet-500/20 px-4 py-2 text-sm text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-50 sm:ml-auto"
+            className="rounded-full border border-violet-400/50 bg-violet-500/20 px-5 py-2.5 text-base text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-50 sm:ml-auto"
           >
             {busy ? "Сохранение…" : "Предсказать"}
           </button>
         </div>
         {!canAddMore && (
-          <p className="text-[11px] text-white/45">
+          <p className="text-sm text-white/45">
             Все доступные горизонты уже использованы для этой новости. Удалите лишнее, чтобы
             добавить снова.
           </p>
@@ -249,7 +249,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
       </div>
 
       {predicts.length > 0 && (
-        <ul className="mt-4 space-y-4">
+        <ul className="mt-5 space-y-5">
           {predicts.map((predict) => {
             const closedCardClass =
               predict.status === "closed"
@@ -265,29 +265,29 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
             return (
             <li
               key={predict.id}
-              className={`rounded-xl border p-4 shadow-inner shadow-black/20 ${closedCardClass}`}
+              className={`rounded-xl border p-4 text-base shadow-inner shadow-black/20 ${closedCardClass}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="text-sm text-white/85">
+                <div className="text-base text-white/85">
                   <span className="text-white/55">Тональность: </span>
                   <span className={predictionTextClass(predict.prediction)}>
                     {predictionLabel(predict.prediction)}
                   </span>
-                  <span className="ml-2 text-xs text-white/45">
+                  <span className="ml-2 text-sm text-white/45">
                     · горизонт {formatWaitHorizon(predict.lagMinutes)}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => void onDelete(predict.id)}
-                  className="text-xs text-rose-300/90 underline-offset-2 hover:text-rose-200 hover:underline"
+                  className="text-sm text-rose-300/90 underline-offset-2 hover:text-rose-200 hover:underline"
                 >
                   Удалить
                 </button>
               </div>
 
               {predict.status === "expect" ? (
-                <div className="mt-2 inline-flex items-center gap-2 text-xs text-white/60">
+                <div className="mt-2 inline-flex items-center gap-2 text-sm text-white/60">
                   <span
                     className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
                     aria-hidden
@@ -297,7 +297,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
               ) : (
                 <>
                   {resultLabel(predict.result) ? (
-                    <p className="mt-2 text-sm text-white/90">
+                    <p className="mt-2 text-base text-white/90">
                       Результат:{" "}
                       <span className={resultTextClass(predict.result)}>
                         {resultLabel(predict.result)}
@@ -334,7 +334,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                     Number.isFinite(predict.priceBefore) &&
                     Number.isFinite(predict.priceAfter) && (
                       <>
-                        <p className="mt-2 font-mono text-xs text-white/70">
+                        <p className="mt-2 font-mono text-sm text-white/70">
                           Цена A — B: {predict.priceBefore.toFixed(2)} → {predict.priceAfter.toFixed(2)}
                         </p>
                         <PredictMinutePathChart
@@ -351,7 +351,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
         </ul>
       )}
 
-      {error && <p className="mt-2 text-xs text-rose-300">{error}</p>}
+      {error && <p className="mt-2 text-sm text-rose-300">{error}</p>}
     </div>
   );
 }

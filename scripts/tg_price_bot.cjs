@@ -122,7 +122,7 @@ async function handleUpdates() {
       if (r.rowCount === 1) {
         await sendMessage(
           msg.chat.id,
-          `Чат привязан к логину «${r.rows[0].login}». Котировки MOEX — раз в минуту; новости по выбранным в профиле тикерам — раз в 10 минут (или уведомление, что новых новостей нет).`,
+          `Чат привязан к логину «${r.rows[0].login}». Котировки MOEX и новости по выбранным в профиле тикерам будут приходить с интервалом из настроек профиля.`,
         );
       } else {
         await sendMessage(
@@ -141,27 +141,37 @@ async function handleUpdates() {
 
 async function sendPriceDigest() {
   const { rows } = await pool.query(`
-    SELECT u.tg_chat_id, c.ticker
+    SELECT u.id, u.tg_chat_id, c.ticker
     FROM users u
     INNER JOIN user_ticker_alerts uta ON uta.user_id = u.id
     INNER JOIN companies c ON c.id = uta.company_id
     WHERE u.tg_chat_id IS NOT NULL
+      AND (
+        u.tg_price_last_digest_at IS NULL
+        OR u.tg_price_last_digest_at <= NOW() - (u.tg_news_interval_minutes * INTERVAL '1 minute')
+      )
     ORDER BY u.tg_chat_id ASC, c.ticker ASC
   `);
 
   const byChat = new Map();
   for (const row of rows) {
     const chatId = Number(row.tg_chat_id);
+    const userId = Number(row.id);
     if (!Number.isFinite(chatId)) {
       continue;
     }
     if (!byChat.has(chatId)) {
-      byChat.set(chatId, []);
+      byChat.set(chatId, { userIds: new Set(), tickers: [] });
     }
-    byChat.get(chatId).push(row.ticker);
+    const item = byChat.get(chatId);
+    if (Number.isFinite(userId)) {
+      item.userIds.add(userId);
+    }
+    item.tickers.push(row.ticker);
   }
 
-  for (const [chatId, tickers] of byChat) {
+  for (const [chatId, item] of byChat) {
+    const tickers = item.tickers;
     const unique = [...new Set(tickers)];
     const lines = ["DiplomApp · MOEX TQBR"];
     for (const t of unique) {
@@ -174,7 +184,12 @@ async function sendPriceDigest() {
       }
     }
     const text = lines.join("\n").slice(0, 4000);
-    await sendMessage(chatId, text);
+    const ok = await sendMessage(chatId, text);
+    if (ok && item.userIds.size > 0) {
+      await pool.query(`UPDATE users SET tg_price_last_digest_at = NOW() WHERE id = ANY($1::bigint[])`, [
+        [...item.userIds],
+      ]);
+    }
   }
 }
 
@@ -219,10 +234,14 @@ const NO_NEWS_TEXT = "Новых новостей не наблюдается.";
 
 async function sendNewsDigest() {
   const { rows: users } = await pool.query(`
-    SELECT u.id, u.tg_chat_id, u.tg_news_last_digest_at
+    SELECT u.id, u.tg_chat_id, u.tg_news_last_digest_at, u.tg_news_interval_minutes
     FROM users u
     WHERE u.tg_chat_id IS NOT NULL
       AND EXISTS (SELECT 1 FROM user_ticker_alerts uta WHERE uta.user_id = u.id)
+      AND (
+        u.tg_news_last_digest_at IS NULL
+        OR u.tg_news_last_digest_at <= NOW() - (u.tg_news_interval_minutes * INTERVAL '1 minute')
+      )
   `);
 
   for (const u of users) {
@@ -230,6 +249,10 @@ async function sendNewsDigest() {
     if (!Number.isFinite(chatId)) {
       continue;
     }
+    const intervalMinutes = Math.min(
+      1440,
+      Math.max(1, Math.round(Number(u.tg_news_interval_minutes) || 10)),
+    );
 
     const { rows: idRows } = await pool.query(
       `SELECT company_id FROM user_ticker_alerts WHERE user_id = $1`,
@@ -249,13 +272,13 @@ async function sendNewsDigest() {
           FROM news n
           INNER JOIN companies c ON c.id = n.company_id
           WHERE n.company_id = ANY($1::bigint[])
-            AND n.datetime > COALESCE($2::timestamp, NOW() - INTERVAL '10 minutes')
+            AND n.datetime >= NOW() - ($2::int * INTERVAL '1 minute')
           ORDER BY n.datetime DESC, n.id DESC
           LIMIT 40
         )
         SELECT * FROM recent ORDER BY datetime ASC, id ASC
         `,
-        [companyIds, u.tg_news_last_digest_at],
+        [companyIds, intervalMinutes],
       );
       newsRows = res.rows;
     } catch (e) {
@@ -300,7 +323,7 @@ async function main() {
 
   setInterval(() => {
     void sendNewsDigest().catch((e) => console.error("news digest", e));
-  }, 10 * 60_000);
+  }, 60_000);
 
   void sendPriceDigest().catch((e) => console.error("digest", e));
   void sendNewsDigest().catch((e) => console.error("news digest", e));

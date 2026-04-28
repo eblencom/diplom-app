@@ -15,44 +15,41 @@ type AppHeaderProps = {
 export function AppHeader({ login, role }: AppHeaderProps) {
   return (
     // verkhnyaya panelka
-    <header className="mb-6 flex flex-col gap-4 rounded-2xl border border-white/15 bg-[#0f0a35]/75 px-4 py-4 backdrop-blur-xl sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-      <Link href="/home" className="shrink-0 text-base font-semibold text-white sm:text-lg">
+    <header className="mb-6 grid gap-4 rounded-2xl border border-white/15 bg-[#0f0a35]/75 px-4 py-4 backdrop-blur-xl sm:mb-8 sm:px-5 xl:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] xl:items-center">
+      <Link href="/home" className="shrink-0 text-xl font-semibold text-white sm:text-2xl">
         DiplomApp
       </Link>
 
-      <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-x-3 sm:gap-y-2">
-        <div className="flex min-w-0 flex-wrap gap-2">
-          <div className="min-w-0 max-w-full rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs text-white/85 sm:text-sm">
-            Логин:{" "}
-            <span className="font-medium break-all sm:break-normal">{login}</span>
-          </div>
-          <div className="shrink-0 rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-xs text-white/85 sm:text-sm">
-            Роль: <span className="font-medium">{roleLabel[role]}</span>
-          </div>
+      <nav
+        aria-label="Основное меню"
+        className="min-w-0 overflow-x-auto rounded-full border border-white/15 bg-black/25 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)]"
+      >
+        <div className="grid min-w-max grid-cols-4 gap-1">
+          {[
+            ["Главная", "/home"],
+            ["Дашборд", "/dashboard"],
+            ["Профиль", "/profile"],
+            ["Справка", "/help"],
+          ].map(([label, href]) => (
+            <Link
+              key={href}
+              href={href}
+              className="inline-flex min-h-10 items-center justify-center rounded-full px-4 py-2 text-base font-medium text-white/82 transition hover:bg-white/10 hover:text-white sm:min-w-28"
+            >
+              {label}
+            </Link>
+          ))}
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/help"
-            aria-label="Открыть справочную систему"
-            title="Справка"
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-cyan-300/45 bg-cyan-500/10 text-base font-semibold text-cyan-100 transition hover:bg-cyan-500/20"
-          >
-            ?
-          </Link>
-          <Link
-            href="/dashboard"
-            className="inline-flex flex-1 items-center justify-center rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white/10 sm:flex-initial"
-          >
-            Дашборд
-          </Link>
-          <Link
-            href="/profile"
-            className="inline-flex flex-1 items-center justify-center rounded-full border border-white/35 px-4 py-2 text-sm text-white transition hover:bg-white/10 sm:flex-initial"
-          >
-            Профиль
-          </Link>
-          <LogoutButton className="flex-1 sm:flex-initial" />
+      </nav>
+
+      <div className="flex min-w-0 flex-wrap items-center gap-2 xl:flex-nowrap xl:justify-end">
+        <div className="min-w-0 max-w-full rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-sm text-white/85 sm:text-base">
+          Логин: <span className="font-medium break-all sm:break-normal">{login}</span>
         </div>
+        <div className="shrink-0 rounded-full border border-white/20 bg-black/25 px-3 py-1.5 text-sm text-white/85 sm:text-base">
+          Роль: <span className="font-medium">{roleLabel[role]}</span>
+        </div>
+        <LogoutButton className="w-full sm:w-auto" />
       </div>
     </header>
   );

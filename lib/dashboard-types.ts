@@ -21,6 +21,16 @@ export type DashboardBestProfitLag = {
   closedCount: number;
 };
 
+export type DashboardVisualSummary = {
+  totalPredictions: number;
+  bestPositiveProfit: number | null;
+  worstNegativeProfit: number | null;
+  busiestNewsDay: {
+    date: string;
+    newsCount: number;
+  } | null;
+};
+
 export type DashboardStatsPayload = {
   from: string;
   to: string;
@@ -33,4 +43,5 @@ export type DashboardStatsPayload = {
   days: DashboardDayPoint[];
   companyPredictCounts: DashboardCompanyPredictCount[];
   bestProfitLag: DashboardBestProfitLag | null;
+  visualSummary: DashboardVisualSummary;
 };

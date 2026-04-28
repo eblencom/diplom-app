@@ -4,9 +4,11 @@ ALTER TABLE predicts
 UPDATE predicts
 SET profit =
   CASE result
-    WHEN 'win' THEN ABS(result_percent)
-    WHEN 'lose' THEN -ABS(result_percent)
-    WHEN 'neutral' THEN result_percent * 0
+    WHEN 'win' THEN
+      CASE WHEN result_percent IS NULL THEN NULL ELSE ABS(result_percent) END
+    WHEN 'lose' THEN
+      CASE WHEN result_percent IS NULL THEN NULL ELSE -ABS(result_percent) END
+    WHEN 'neutral' THEN 0
     ELSE NULL
   END
-WHERE result_percent IS NOT NULL;
+WHERE status = 'closed' OR profit IS NOT NULL;

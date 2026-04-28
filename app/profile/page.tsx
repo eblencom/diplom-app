@@ -4,7 +4,6 @@ import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { getCompaniesForNewsFilter } from "@/lib/news";
 import { getCurrentSession } from "@/lib/session";
 import { getUserTelegramState } from "@/lib/user-telegram";
-import { BackNavButton } from "@/app/components/back-nav-button";
 import { ProfileActions } from "@/app/profile/profile-actions";
 import { ProfileTelegramPreferences } from "@/app/profile/profile-telegram-preferences";
 
@@ -25,13 +24,9 @@ export default async function ProfilePage() {
       <section className={APP_CONTENT_MAX_CLASS}>
         <AppHeader login={session.login} role={session.role} />
 
-        <div className="mb-4 sm:mb-6">
-          <BackNavButton />
-        </div>
-
-        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-6 md:p-8">
-          <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">Настройки профиля</h1>
-          <p className="mt-2 text-sm text-white/65 sm:text-base">
+        <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-5 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-7 md:p-9">
+          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Настройки профиля</h1>
+          <p className="mt-3 text-base text-white/65 sm:text-lg">
             Логин, пароль, Telegram и тикеры для рассылки. Для смены логина и пароля нужен
             текущий пароль.
           </p>
@@ -42,6 +37,7 @@ export default async function ProfilePage() {
               initialTgUsername={tgState.tgUsername}
               initialTgChatId={tgState.tgChatId}
               initialAlertCompanyIds={tgState.alertCompanyIds}
+              initialNewsIntervalMinutes={tgState.newsIntervalMinutes}
               companies={companies}
             />
           </div>

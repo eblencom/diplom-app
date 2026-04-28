@@ -1,5 +1,6 @@
 "use client";
 
+import { CompanyLogo } from "@/app/components/company-logo";
 import type { DashboardBestProfitLag, DashboardCompanyPredictCount } from "@/lib/dashboard-types";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
 
@@ -20,25 +21,25 @@ type Props = {
 export function DashboardCompanyPredictBars({ items, bestProfitLag, className = "" }: Props) {
   const max = items.length ? Math.max(...items.map((i) => i.count), 1) : 1;
   const shown = items.slice(0, 10);
+  const profitTone =
+    bestProfitLag && bestProfitLag.sumProfit < 0
+      ? "border-rose-400/25 bg-rose-500/15 text-rose-100"
+      : "border-emerald-400/25 bg-emerald-500/15 text-emerald-100";
 
   return (
-    <div className={`rounded-lg border border-white/10 bg-white/[0.04] px-3 py-3 ${className}`}>
-      <p className="text-xs font-semibold uppercase tracking-wide text-white/55">
-        Чаще по компаниям
-      </p>
-      <p className="mt-1 text-xs leading-snug text-white/45">Все предсказания в интервале</p>
-      <div className="mt-3 rounded-md border border-white/[0.08] bg-black/25 px-3 py-2">
-        <p className="text-xs font-semibold uppercase tracking-wide text-amber-200/70">
+    <div className={`rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 ${className}`}>
+      <div className={`rounded-xl border px-4 py-3 ${profitTone}`}>
+        <p className="text-sm font-semibold uppercase tracking-wide text-white/70">
           Прибыльный горизонт
         </p>
         {bestProfitLag ? (
           <>
-            <p className="mt-1 text-base font-semibold text-white">
+            <p className="mt-2 text-2xl font-semibold text-white">
               {formatLagMinutes(bestProfitLag.lagMinutes)}
             </p>
-            <p className="mt-1 text-sm leading-snug text-white/55">
-              Σ %:{" "}
-              <span className="font-mono tabular-nums text-cyan-100">
+            <p className="mt-1 text-base leading-snug text-white/75">
+              Profit:{" "}
+              <span className="font-mono text-lg font-semibold tabular-nums text-white">
                 {bestProfitLag.sumProfit.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
@@ -48,11 +49,15 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
             </p>
           </>
         ) : (
-          <p className="mt-1 text-sm text-white/50">Нет закрытых с %</p>
+          <p className="mt-2 text-base text-white/60">Нет закрытых с profit</p>
         )}
       </div>
+      <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-white/60">
+        Чаще по компаниям
+      </p>
+      <p className="mt-1 text-sm leading-snug text-white/50">Все предсказания в интервале</p>
       {shown.length === 0 ? (
-        <p className="mt-3 text-sm text-white/50">Нет предсказаний.</p>
+        <p className="mt-3 text-base text-white/50">Нет предсказаний.</p>
       ) : (
         <ul className="mt-3 space-y-2.5">
           {shown.map((row, idx) => {
@@ -60,9 +65,9 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
             const grad = BAR_COLORS[idx % BAR_COLORS.length];
             return (
               <li key={row.ticker} className="min-w-0">
-                <div className="flex items-baseline justify-between gap-2 text-sm leading-snug">
+                <div className="flex items-baseline justify-between gap-2 text-base leading-snug">
                   <span className="min-w-0 truncate font-mono font-semibold text-white">{row.ticker}</span>
-                  <span className="shrink-0 tabular-nums text-white/65">{row.count}</span>
+                  <span className="shrink-0 tabular-nums text-white/75">{row.count}</span>
                 </div>
                 <div
                   className="mt-1 h-2 overflow-hidden rounded-full bg-white/[0.07]"
@@ -73,8 +78,9 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="mt-1 truncate text-xs text-white/50" title={row.name}>
-                  {row.name}
+                <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-white/55" title={row.name}>
+                  <CompanyLogo ticker={row.ticker} name={row.name} size={18} />
+                  <span className="truncate">{row.name}</span>
                 </p>
               </li>
             );

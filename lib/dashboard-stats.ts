@@ -27,6 +27,14 @@ function enumerateDateStringsInclusive(from: string, to: string): string[] {
   return out;
 }
 
+function dateToUtcMs(ymd: string): number {
+  return Date.UTC(
+    Number(ymd.slice(0, 4)),
+    Number(ymd.slice(5, 7)) - 1,
+    Number(ymd.slice(8, 10)),
+  );
+}
+
 type SummaryRow = {
   win: string | null;
   lose: string | null;
@@ -60,6 +68,15 @@ type BestLagRow = {
   cnt: string | null;
 };
 
+type ProfitExtremesRow = {
+  best_positive_profit: string | null;
+  worst_negative_profit: string | null;
+};
+
+type TotalPredictsRow = {
+  c: string | null;
+};
+
 function num(v: string | null | undefined): number {
   if (v == null || v === "") {
     return 0;
@@ -71,6 +88,7 @@ function num(v: string | null | undefined): number {
 export async function getDashboardStats(input: {
   userId: number;
   isAdmin: boolean;
+  selectedUserId?: number | null;
   from: string;
   to: string;
 }): Promise<{ ok: true; data: DashboardStatsPayload } | { ok: false; error: string }> {
@@ -79,25 +97,28 @@ export async function getDashboardStats(input: {
   if (!from || !to || from > to) {
     return { ok: false, error: "bad_range" };
   }
-  const spanDays =
-    (Date.UTC(
-      Number(to.slice(0, 4)),
-      Number(to.slice(5, 7)) - 1,
-      Number(to.slice(8, 10)),
-    ) -
-      Date.UTC(
-        Number(from.slice(0, 4)),
-        Number(from.slice(5, 7)) - 1,
-        Number(from.slice(8, 10)),
-      )) /
-      86400000 +
-    1;
+  const spanDays = (dateToUtcMs(to) - dateToUtcMs(from)) / 86400000 + 1;
   if (spanDays > 400) {
     return { ok: false, error: "range_too_long" };
   }
 
   const isAdmin = input.isAdmin;
-  const uid = input.userId;
+  const selectedUserId =
+    isAdmin && input.selectedUserId != null && Number.isFinite(input.selectedUserId)
+      ? Math.round(input.selectedUserId)
+      : null;
+  const includeAllUsers = isAdmin && selectedUserId == null;
+  const uid = selectedUserId ?? input.userId;
+
+  if (selectedUserId != null) {
+    const userExists = await sql<{ id: string | number }>(
+      `SELECT id FROM users WHERE id = $1 LIMIT 1`,
+      [selectedUserId],
+    );
+    if (!userExists.rows[0]) {
+      return { ok: false, error: "user_not_found" };
+    }
+  }
 
   const sumRes = await sql<SummaryRow>(
     `
@@ -118,7 +139,7 @@ export async function getDashboardStats(input: {
       AND n.datetime < ($2::date + interval '1 day')
       AND ($3::boolean OR p.user_id = $4::bigint)
     `,
-    [from, to, isAdmin, uid],
+    [from, to, includeAllUsers, uid],
   );
 
   const s0 = sumRes.rows[0] ?? { win: "0", lose: "0", sum_result_pct: "0", sum_profit: "0" };
@@ -146,7 +167,7 @@ export async function getDashboardStats(input: {
     GROUP BY n.datetime::date
     ORDER BY d ASC
     `,
-    [from, to, isAdmin, uid],
+    [from, to, includeAllUsers, uid],
   );
 
   const predMap = new Map(dailyPred.rows.map((r) => [r.d, r]));
@@ -176,7 +197,7 @@ export async function getDashboardStats(input: {
     GROUP BY c.id, c.ticker, c.name
     ORDER BY COUNT(*) DESC, c.ticker ASC
     `,
-    [from, to, isAdmin, uid],
+    [from, to, includeAllUsers, uid],
   );
   const companyPredictCounts: DashboardCompanyPredictCount[] = byCompany.rows.map((r) => ({
     ticker: r.ticker,
@@ -201,7 +222,7 @@ export async function getDashboardStats(input: {
     ORDER BY SUM(p.profit) DESC NULLS LAST, COUNT(*) DESC
     LIMIT 1
     `,
-    [from, to, isAdmin, uid],
+    [from, to, includeAllUsers, uid],
   );
   const bl = bestLagRes.rows[0];
   const lagM = bl?.lag_minutes != null ? Math.round(num(bl.lag_minutes)) : 0;
@@ -213,6 +234,34 @@ export async function getDashboardStats(input: {
           closedCount: num(bl.cnt),
         }
       : null;
+
+  const profitExtremesRes = await sql<ProfitExtremesRow>(
+    `
+    SELECT
+      MAX(p.profit) FILTER (WHERE p.status = 'closed' AND p.profit > 0)::text AS best_positive_profit,
+      MIN(p.profit) FILTER (WHERE p.status = 'closed' AND p.profit < 0)::text AS worst_negative_profit
+    FROM predicts p
+    INNER JOIN news n ON n.id = p.news_id
+    WHERE n.datetime >= $1::date
+      AND n.datetime < ($2::date + interval '1 day')
+      AND ($3::boolean OR p.user_id = $4::bigint)
+    `,
+    [from, to, includeAllUsers, uid],
+  );
+  const extremes = profitExtremesRes.rows[0];
+
+  const totalPredictsRes = await sql<TotalPredictsRow>(
+    `
+    SELECT COUNT(*)::text AS c
+    FROM predicts p
+    INNER JOIN news n ON n.id = p.news_id
+    WHERE n.datetime >= $1::date
+      AND n.datetime < ($2::date + interval '1 day')
+      AND ($3::boolean OR p.user_id = $4::bigint)
+    `,
+    [from, to, includeAllUsers, uid],
+  );
+  const totalPredictions = num(totalPredictsRes.rows[0]?.c);
 
   const allDays = enumerateDateStringsInclusive(from, to);
   let cumulativeResult = 0;
@@ -239,13 +288,19 @@ export async function getDashboardStats(input: {
       cumulativeProfit,
     };
   });
+  const busiestDay = days.reduce<DashboardDayPoint | null>((best, day) => {
+    if (!best || day.newsCount > best.newsCount) {
+      return day;
+    }
+    return best;
+  }, null);
 
   return {
     ok: true,
     data: {
       from,
       to,
-      scope: isAdmin ? "all" : "user",
+      scope: includeAllUsers ? "all" : "user",
       win,
       lose,
       weightedWinrate,
@@ -254,6 +309,17 @@ export async function getDashboardStats(input: {
       days,
       companyPredictCounts,
       bestProfitLag,
+      visualSummary: {
+        totalPredictions,
+        bestPositiveProfit:
+          extremes?.best_positive_profit == null ? null : num(extremes.best_positive_profit),
+        worstNegativeProfit:
+          extremes?.worst_negative_profit == null ? null : num(extremes.worst_negative_profit),
+        busiestNewsDay:
+          busiestDay && busiestDay.newsCount > 0
+            ? { date: busiestDay.date, newsCount: busiestDay.newsCount }
+            : null,
+      },
     },
   };
 }

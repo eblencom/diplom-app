@@ -3,10 +3,11 @@
 import { useId } from "react";
 
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
+import { formatDisplayYmd } from "@/lib/display-date";
 
 const PLOT_H = 168;
 const BAR_TOP_RESERVE = 10;
-const Y_AXIS_W = 40;
+const Y_AXIS_W = 52;
 
 function maxPos(values: number[]): number {
   return Math.max(1, ...values, 1e-9);
@@ -22,17 +23,14 @@ function niceCeil(x: number): number {
   return nice * pow10;
 }
 
-function shortDateLabel(iso: string): string {
-  const [, m, d] = iso.split("-");
-  if (!m || !d) {
-    return iso;
+function formatSignedPercent(value: number | null): string {
+  if (value == null) {
+    return "—";
   }
-  return `${d}.${m}`;
-}
-
-function xAxisLabelClass(nDays: number): string {
-  const size = nDays > 24 ? "text-[9px]" : nDays > 14 ? "text-[10px]" : "text-xs";
-  return `block max-w-full truncate text-center leading-tight text-white/60 tabular-nums ${size}`;
+  return `${value.toLocaleString("ru-RU", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}%`;
 }
 
 type ColumnChartProps = {
@@ -59,16 +57,14 @@ function ColumnChart({
   const tickCount = 4;
   const step = maxY / tickCount;
   const ticks = Array.from({ length: tickCount + 1 }, (_, i) => maxY - i * step);
-  const xLabelCls = xAxisLabelClass(days.length);
-  const tiltX = days.length > 10;
 
   return (
-    <div className="rounded-xl border border-white/12 bg-black/30 p-3 sm:p-3.5">
-      <h3 className="text-sm font-semibold text-white/90">{title}</h3>
-      {subtitle ? <p className="mt-1 text-xs leading-snug text-white/50">{subtitle}</p> : null}
+    <div className="rounded-xl border border-white/12 bg-black/30 p-4 sm:p-5">
+      <h3 className="text-xl font-semibold text-white sm:text-2xl">{title}</h3>
+      {subtitle ? <p className="mt-1 text-base leading-snug text-white/55">{subtitle}</p> : null}
       <div className="mt-2 flex gap-1.5">
         <div
-          className="flex shrink-0 flex-col justify-between py-1 text-right text-[11px] leading-none text-white/50"
+          className="flex shrink-0 flex-col justify-between py-1 text-right text-sm font-medium leading-none text-white"
           style={{ width: Y_AXIS_W, height: PLOT_H }}
         >
           {ticks.map((t) => (
@@ -93,7 +89,7 @@ function ColumnChart({
                   <div
                     key={d.date}
                     className="group flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-end border-l border-white/[0.06] first:border-l-0"
-                    title={`${d.date}: ${valueOnBar(d)}`}
+                    title={`${formatDisplayYmd(d.date)}: ${valueOnBar(d)}`}
                   >
                     <div
                       className={`w-full max-w-[12px] rounded-t transition-[height] duration-500 ease-out ${barClass}`}
@@ -103,27 +99,6 @@ function ColumnChart({
                 );
               })}
             </div>
-          </div>
-          <div
-            className="mt-1 flex justify-between gap-px"
-            style={{ paddingLeft: 0, minHeight: tiltX ? "2.6rem" : undefined }}
-          >
-            {days.map((d) => (
-              <div
-                key={`x-${d.date}`}
-                className="flex min-w-0 flex-1 flex-col items-center justify-start"
-              >
-                <span
-                  className={xLabelCls}
-                  style={{
-                    transform: tiltX ? "rotate(-52deg)" : undefined,
-                    transformOrigin: "top center",
-                  }}
-                >
-                  {shortDateLabel(d.date)}
-                </span>
-              </div>
-            ))}
           </div>
         </div>
       </div>
@@ -188,11 +163,13 @@ function DailyPercentBars({
   title,
   subtitle,
   getValue,
+  plotHeight = PLOT_H,
 }: {
   days: DashboardDayPoint[];
   title: string;
   subtitle: string;
   getValue: (d: DashboardDayPoint) => number;
+  plotHeight?: number;
 }) {
   const vals = days.map(getValue);
   const minV = Math.min(0, ...vals);
@@ -203,17 +180,15 @@ function DailyPercentBars({
     const t = maxV - (i / tickCount) * (maxV - minV);
     return t;
   });
-  const xLabelCls = xAxisLabelClass(days.length);
-  const tiltX = days.length > 10;
 
   return (
-    <div className="rounded-xl border border-white/12 bg-black/30 p-3 sm:p-3.5">
-      <h3 className="text-sm font-semibold text-white/90">{title}</h3>
-      <p className="mt-1 text-xs leading-snug text-white/50">{subtitle}</p>
+    <div className="rounded-xl border border-white/12 bg-black/30 p-4 sm:p-5">
+      <h3 className="text-xl font-semibold text-white sm:text-2xl">{title}</h3>
+      <p className="mt-1 text-base leading-snug text-white/55">{subtitle}</p>
       <div className="mt-2 flex gap-1.5">
         <div
-          className="flex shrink-0 flex-col justify-between py-1 text-right text-[11px] leading-none text-white/50"
-          style={{ width: Y_AXIS_W, height: PLOT_H }}
+          className="flex shrink-0 flex-col justify-between py-1 text-right text-sm font-medium leading-none text-white"
+          style={{ width: Y_AXIS_W, height: plotHeight }}
         >
           {ticks.map((t) => (
             <span key={t} className="tabular-nums">
@@ -222,7 +197,7 @@ function DailyPercentBars({
           ))}
         </div>
         <div className="min-w-0 flex-1">
-          <div className="relative rounded border border-white/10 bg-[#05021b]/50" style={{ height: PLOT_H }}>
+          <div className="relative rounded border border-white/10 bg-[#05021b]/50" style={{ height: plotHeight }}>
             {ticks.map((_, i) => (
               <div
                 key={i}
@@ -233,12 +208,12 @@ function DailyPercentBars({
             <div className="absolute inset-x-0.5 inset-y-1 flex items-stretch gap-px">
               {days.map((d) => {
                 const raw = getValue(d);
-                const barPx = Math.max(3, Math.round(((raw - minV) / span) * (PLOT_H - BAR_TOP_RESERVE)));
+                const barPx = Math.max(3, Math.round(((raw - minV) / span) * (plotHeight - BAR_TOP_RESERVE)));
                 return (
                   <div
                     key={d.date}
                     className="group flex h-full min-h-0 min-w-0 flex-1 flex-col items-center justify-end border-l border-white/[0.06] first:border-l-0"
-                    title={`${d.date}: ${raw.toFixed(2)}%`}
+                    title={`${formatDisplayYmd(d.date)}: ${raw.toFixed(2)}%`}
                   >
                     <div
                       className={`w-full max-w-[12px] rounded-t transition-[height] duration-500 ease-out ${
@@ -251,24 +226,6 @@ function DailyPercentBars({
               })}
             </div>
           </div>
-          <div
-            className="mt-1 flex justify-between gap-px"
-            style={{ minHeight: tiltX ? "2.6rem" : undefined }}
-          >
-            {days.map((d) => (
-              <div key={`xp-${d.date}`} className="flex min-w-0 flex-1 flex-col items-center">
-                <span
-                  className={xLabelCls}
-                  style={{
-                    transform: tiltX ? "rotate(-52deg)" : undefined,
-                    transformOrigin: "top center",
-                  }}
-                >
-                  {shortDateLabel(d.date)}
-                </span>
-              </div>
-            ))}
-          </div>
         </div>
       </div>
     </div>
@@ -277,6 +234,47 @@ function DailyPercentBars({
 
 const RESULT_CHART_CAPTION =
   "График показателя результата в % за выбранный интервал";
+
+type DayValueConfig = {
+  title: string;
+  subtitle: string;
+  getValue: (d: DashboardDayPoint) => number;
+};
+
+const COUNT_CHARTS: (DayValueConfig & { colorClass: string })[] = [
+  {
+    title: "Предсказания",
+    subtitle: "Закрытых за день",
+    getValue: (d) => d.predictions,
+    colorClass: "bg-violet-400/85",
+  },
+  {
+    title: "Новости",
+    subtitle: "Опубликовано за день",
+    getValue: (d) => d.newsCount,
+    colorClass: "bg-sky-400/85",
+  },
+];
+
+const DAILY_RESULT_CHART: DayValueConfig = {
+  title: "Σ % по дням",
+  subtitle: "Сумма result_percent за день",
+  getValue: (d) => d.sumResultPercent,
+};
+
+const DAILY_PROFIT_CHART: DayValueConfig = {
+  title: "Profit по дням",
+  subtitle: "Сумма profit за день",
+  getValue: (d) => d.sumProfit,
+};
+
+const CUMULATIVE_CHARTS: (Omit<DayValueConfig, "subtitle"> & { className: string })[] = [
+  {
+    title: RESULT_CHART_CAPTION,
+    getValue: (d) => d.cumulativeResultPercent,
+    className: "min-h-[240px] lg:min-h-[260px]",
+  },
+];
 
 function CumulativeLineChart({
   days,
@@ -295,11 +293,11 @@ function CumulativeLineChart({
   const maxV = Math.max(0, ...vals);
   const span = Math.max(1e-9, maxV - minV);
   const plotW = Math.max(560, Math.min(1040, 96 + days.length * 18));
-  const plotH = 320;
-  const padL = 14;
+  const plotH = 240;
+  const padL = 62;
   const padR = 14;
   const padT = 14;
-  const padB = 14;
+  const padB = 42;
   const innerW = plotW - padL - padR;
   const innerH = plotH - padT - padB;
   const tickCount = 4;
@@ -314,17 +312,17 @@ function CumulativeLineChart({
 
   return (
     <div
-      className={`flex min-h-0 flex-1 flex-col rounded-xl border border-white/12 bg-black/30 p-3 sm:p-4 ${className}`}
+      className={`flex min-h-0 flex-col rounded-xl border border-white/12 bg-black/30 p-4 sm:p-5 ${className}`}
     >
-      <h3 className="text-center text-sm font-medium leading-snug text-white/85 sm:text-[15px]">
+      <h3 className="text-center text-xl font-semibold leading-snug text-white sm:text-2xl">
         {title}
       </h3>
-      <div className="mt-3 min-h-0 flex-1 overflow-x-auto">
+      <div className="mt-3 min-h-0 overflow-x-auto">
         <svg
           width={plotW}
           height={plotH}
           viewBox={`0 0 ${plotW} ${plotH}`}
-          className="mx-auto block min-h-[260px] w-full max-w-full text-white/50 sm:min-h-[280px]"
+          className="mx-auto block min-h-[210px] w-full max-w-full text-white sm:min-h-[220px]"
           aria-label={title}
         >
           {yTicks.map((yt, i) => {
@@ -352,6 +350,20 @@ function CumulativeLineChart({
               strokeOpacity={0.06}
             />
           ))}
+          {yTicks.map((yt, i) => {
+            const y = padT + ((maxV - yt) / span) * innerH;
+            return (
+              <text
+                key={`yt-${i}`}
+                x={padL - 10}
+                y={y + 4}
+                textAnchor="end"
+                className="fill-white text-[15px] font-medium"
+              >
+                {yt.toFixed(0)}
+              </text>
+            );
+          })}
           <defs>
             <linearGradient id={gradId} x1="0" y1="0" x2="1" y2="0">
               <stop offset="0%" stopColor="rgb(34 211 238)" stopOpacity="0.5" />
@@ -376,6 +388,52 @@ function CumulativeLineChart({
   );
 }
 
+function VisualSummaryCard({ stats }: { stats: DashboardStatsPayload }) {
+  const summary = stats.visualSummary;
+  const items = [
+    {
+      title: "Всего предсказаний",
+      value: summary.totalPredictions.toLocaleString("ru-RU"),
+      className: "border-violet-400/25 bg-violet-500/15 text-violet-100",
+    },
+    {
+      title: "Самый большой положительный profit",
+      value: formatSignedPercent(summary.bestPositiveProfit),
+      className: "border-emerald-400/25 bg-emerald-500/15 text-emerald-100",
+    },
+    {
+      title: "Самый большой отрицательный profit",
+      value: formatSignedPercent(summary.worstNegativeProfit),
+      className: "border-rose-400/25 bg-rose-500/15 text-rose-100",
+    },
+    {
+      title: "День с максимумом новостей",
+      value: summary.busiestNewsDay
+        ? `${formatDisplayYmd(summary.busiestNewsDay.date)} · ${summary.busiestNewsDay.newsCount}`
+        : "—",
+      className: "border-sky-400/25 bg-sky-500/15 text-sky-100",
+    },
+  ];
+
+  return (
+    <div className="flex h-full flex-col rounded-xl border border-white/12 bg-black/30 p-3.5 sm:p-4">
+      <h3 className="text-center text-xl font-semibold leading-snug text-white sm:text-2xl">
+        Визуальная сводка
+      </h3>
+      <div className="mt-3 grid flex-1 content-center gap-2.5">
+        {items.map((item) => (
+          <div key={item.title} className={`rounded-2xl border px-3.5 py-2.5 ${item.className}`}>
+            <p className="text-sm font-medium leading-snug text-white/75">{item.title}</p>
+            <p className="mt-1.5 font-mono text-xl font-semibold tabular-nums text-white sm:text-2xl">
+              {item.value}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 type Props = {
   stats: DashboardStatsPayload;
   className?: string;
@@ -388,49 +446,20 @@ export function DashboardCharts({ stats, className = "" }: Props) {
   }
 
   return (
-    <div className={`flex h-full min-h-0 flex-col gap-2 ${className}`}>
-      <div className="grid shrink-0 gap-2 sm:grid-cols-2">
+    <div className={`flex h-full min-h-0 flex-col gap-4 ${className}`}>
+      <div className="grid shrink-0 gap-4 sm:grid-cols-2">
         <WinrateBarBlock days={days} />
-        <CountBarBlock
-          title="Предсказания"
-          subtitle="Закрытых за день"
-          days={days}
-          getValue={(d) => d.predictions}
-          colorClass="bg-violet-400/85"
-        />
-        <CountBarBlock
-          title="Новости"
-          subtitle="Опубликовано за день"
-          days={days}
-          getValue={(d) => d.newsCount}
-          colorClass="bg-sky-400/85"
-        />
-        <DailyPercentBars
-          days={days}
-          title="Σ % по дням"
-          subtitle="Сумма result_percent за день"
-          getValue={(d) => d.sumResultPercent}
-        />
-        <DailyPercentBars
-          days={days}
-          title="Profit по дням"
-          subtitle="Сумма profit за день"
-          getValue={(d) => d.sumProfit}
-        />
+        {COUNT_CHARTS.map((chart) => (
+          <CountBarBlock key={chart.title} days={days} {...chart} />
+        ))}
+        <DailyPercentBars days={days} {...DAILY_RESULT_CHART} />
       </div>
-      <div className="grid min-h-0 flex-1 gap-2 lg:grid-cols-2">
-        <CumulativeLineChart
-          days={days}
-          title={RESULT_CHART_CAPTION}
-          getValue={(d) => d.cumulativeResultPercent}
-          className="min-h-[300px] flex-1 lg:min-h-[340px]"
-        />
-        <CumulativeLineChart
-          days={days}
-          title="График profit в % за выбранный интервал"
-          getValue={(d) => d.cumulativeProfit}
-          className="min-h-[300px] flex-1 lg:min-h-[340px]"
-        />
+      <DailyPercentBars days={days} plotHeight={240} {...DAILY_PROFIT_CHART} />
+      <div className="grid min-h-0 items-stretch gap-4 lg:grid-cols-2">
+        {CUMULATIVE_CHARTS.map((chart) => (
+          <CumulativeLineChart key={chart.title} days={days} {...chart} />
+        ))}
+        <VisualSummaryCard stats={stats} />
       </div>
     </div>
   );
