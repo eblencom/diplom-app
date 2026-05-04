@@ -183,7 +183,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                         <div>
                           <div className="inline-flex items-center gap-2 text-base text-white/68">
                             <CompanyLogo ticker={item.ticker} name={item.companyName} size={28} />
-                            <span>{item.companyName}</span>
+                            <span className="font-bold text-white">{item.companyName}</span>
                           </div>
                           <div className="mt-1 text-sm text-white/60">{formatDate(item.datetime)}</div>
                           {categoryTags.length > 0 && (

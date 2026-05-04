@@ -30,7 +30,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
     <div className={`rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 ${className}`}>
       <div className={`rounded-xl border px-4 py-3 ${profitTone}`}>
         <p className="text-sm font-semibold uppercase tracking-wide text-white/70">
-          Прибыльный горизонт
+          Самый прибыльный горизонт
         </p>
         {bestProfitLag ? (
           <>
@@ -38,14 +38,14 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
               {formatLagMinutes(bestProfitLag.lagMinutes)}
             </p>
             <p className="mt-1 text-base leading-snug text-white/75">
-              Profit:{" "}
+              Прибыльность:{" "}
               <span className="font-mono text-lg font-semibold tabular-nums text-white">
                 {bestProfitLag.sumProfit.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </span>{" "}
-              · закр. {bestProfitLag.closedCount}
+              прогнозов: {bestProfitLag.closedCount}
             </p>
           </>
         ) : (
@@ -55,9 +55,9 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
       <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-white/60">
         Чаще по компаниям
       </p>
-      <p className="mt-1 text-sm leading-snug text-white/50">Все предсказания в интервале</p>
+      <p className="mt-1 text-sm leading-snug text-white/50">Все прогнозы в интервале</p>
       {shown.length === 0 ? (
-        <p className="mt-3 text-base text-white/50">Нет предсказаний.</p>
+        <p className="mt-3 text-base text-white/50">Нет прогнозов.</p>
       ) : (
         <ul className="mt-3 space-y-2.5">
           {shown.map((row, idx) => {

@@ -171,7 +171,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
         body: JSON.stringify({ lagMinutes }),
       });
       if (response.status === 409) {
-        setError("Уже есть предсказание с этим горизонтом");
+        setError("Уже есть прогноз с этим горизонтом");
         return;
       }
       if (response.status === 400) {
@@ -179,7 +179,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
         return;
       }
       if (!response.ok) {
-        setError("Не удалось сохранить предсказание");
+        setError("Не удалось сохранить прогноз");
         return;
       }
       const payload = (await response.json()) as { predicts?: UserPredictOnNews[] };
@@ -213,7 +213,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
   return (
     <div className="mt-4 border-t border-white/10 pt-4">
       <div className="flex flex-col gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-4">
-        <p className="text-base font-medium text-white/75">Новое предсказание</p>
+        <p className="text-base font-medium text-white/75">Новый прогноз</p>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end">
           <label className="flex flex-col gap-1.5 text-sm text-white/60">
             Горизонт
@@ -237,7 +237,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
             onClick={() => void onAddPredict()}
             className="rounded-full border border-violet-400/50 bg-violet-500/20 px-5 py-2.5 text-base text-violet-100 transition hover:bg-violet-500/30 disabled:opacity-50 sm:ml-auto"
           >
-            {busy ? "Сохранение…" : "Предсказать"}
+            {busy ? "Сохранение…" : "Спрогнозировать"}
           </button>
         </div>
         {!canAddMore && (
@@ -305,7 +305,7 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                     </p>
                   ) : (
                     <p className="mt-2 text-white/55">
-                      Предсказание нейтральное — итог «успех/неуспех» не применяется.
+                      Прогноз нейтральный — итог «успех/неуспех» не применяется.
                     </p>
                   )}
 

@@ -111,8 +111,10 @@ function WinrateBarBlock({ days }: { days: DashboardDayPoint[] }) {
   const maxV = Math.max(100, ...values, 1e-9);
   return (
     <ColumnChart
-      title="Винрейт по дням"
-      subtitle="Доля win среди win+lose, %"
+      title="Соотношение успешных (Win) / неуспешных (Lose) прогнозов по дням"
+      //subtitle="Данная диагрмма показывает изменения соотношения успешных (Win) / неуспешных (Lose) прогнозов в течении выбранного интервала"
+      subtitle="Ось y - соотношение Win / Lose, ось x - даты выбранного интервала"
+
       days={days}
       maxY={maxV}
       barHeight={(d) => {
@@ -232,8 +234,7 @@ function DailyPercentBars({
   );
 }
 
-const RESULT_CHART_CAPTION =
-  "График показателя результата в % за выбранный интервал";
+const RESULT_CHART_CAPTION = "График показателя результата в % за каждый день выбранного интервала";
 
 type DayValueConfig = {
   title: string;
@@ -243,28 +244,29 @@ type DayValueConfig = {
 
 const COUNT_CHARTS: (DayValueConfig & { colorClass: string })[] = [
   {
-    title: "Предсказания",
-    subtitle: "Закрытых за день",
+    title: "Количество прогнозов за каждый день интервала",
+    //subtitle: "Данная диагрмма показывает вашу активность в течении выбранного интервала",
+    subtitle: "Ось y - количество прогнозов, ось x - даты выбранного интервала",
     getValue: (d) => d.predictions,
     colorClass: "bg-violet-400/85",
   },
   {
-    title: "Новости",
-    subtitle: "Опубликовано за день",
+    title: "Количество опубликованных новостей за каждый день интервала",
+    subtitle: "Ось y - количество новостей, ось x - даты выбранного интервала",
     getValue: (d) => d.newsCount,
     colorClass: "bg-sky-400/85",
   },
 ];
 
 const DAILY_RESULT_CHART: DayValueConfig = {
-  title: "Σ % по дням",
-  subtitle: "Сумма result_percent за день",
+  title: "Σ % закрытых прогнозов за каждый день выбранного интервала",
+  subtitle: "Ось y - Σ % изменения цен, ось x - даты выбранного интервала",
   getValue: (d) => d.sumResultPercent,
 };
 
 const DAILY_PROFIT_CHART: DayValueConfig = {
-  title: "Profit по дням",
-  subtitle: "Сумма profit за день",
+  title: "Прибыльность за каждый день выбранного интервала",
+  subtitle: "Ось y - прибыльность, ось x - даты выбранного интервала",
   getValue: (d) => d.sumProfit,
 };
 
@@ -392,22 +394,22 @@ function VisualSummaryCard({ stats }: { stats: DashboardStatsPayload }) {
   const summary = stats.visualSummary;
   const items = [
     {
-      title: "Всего предсказаний",
+      title: "Всего прогнозов",
       value: summary.totalPredictions.toLocaleString("ru-RU"),
       className: "border-violet-400/25 bg-violet-500/15 text-violet-100",
     },
     {
-      title: "Самый большой положительный profit",
+      title: "Самая большая положительная прибыльность",
       value: formatSignedPercent(summary.bestPositiveProfit),
       className: "border-emerald-400/25 bg-emerald-500/15 text-emerald-100",
     },
     {
-      title: "Самый большой отрицательный profit",
+      title: "Самая большая отрицательная прибыльность",
       value: formatSignedPercent(summary.worstNegativeProfit),
       className: "border-rose-400/25 bg-rose-500/15 text-rose-100",
     },
     {
-      title: "День с максимумом новостей",
+      title: "День с максимальным количеством опубликованных новостей",
       value: summary.busiestNewsDay
         ? `${formatDisplayYmd(summary.busiestNewsDay.date)} · ${summary.busiestNewsDay.newsCount}`
         : "—",

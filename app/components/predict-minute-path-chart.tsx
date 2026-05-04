@@ -221,7 +221,7 @@ export function PredictMinutePathChart({ predictId, lagMinutes }: Props) {
           B
         </text>
       </svg>
-      <p className="mt-1 text-[10px] text-white/40">Пропуски минут без сделки на MOEX разрывают линию; A и B закреплены по данным предсказания.</p>
+      <p className="mt-1 text-[10px] text-white/40">Пропуски минут без сделки на MOEX разрывают линию; A и B закреплены по данным прогноза.</p>
     </div>
   );
 }

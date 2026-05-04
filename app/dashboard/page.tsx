@@ -20,9 +20,6 @@ export default async function DashboardPage() {
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h1 className="text-4xl font-semibold sm:text-5xl">Дашборд</h1>
-              <p className="mt-3 max-w-3xl text-base text-white/65 sm:text-lg">
-                Закрытые предсказания в интервале (по дате новости).
-              </p>
             </div>
           </div>
           <div className="mt-6 sm:mt-8">

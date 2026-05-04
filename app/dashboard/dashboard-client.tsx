@@ -83,10 +83,10 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
     ["Winrate", formatPct01(data.weightedWinrate)],
     ["Σ %", data.totalResultPercentSum],
     ["Profit %", data.totalProfitSum],
-    ["Прибыльный горизонт (гор.)", lagLine],
+    ["Самый прибыльный горизонт", lagLine],
     [],
   ];
-  const header = ["Дата", "Winrate %", "Предсказаний", "Новостей", "Σ % дня", "Profit дня", "Σ % накопит.", "Profit накопит."];
+  const header = ["Дата", "Winrate %", "Прогнозов", "Новостей", "Σ % дня", "Profit дня", "Σ % накопит.", "Profit накопит."];
   const body = data.days.map((d) => [
     formatDisplayYmd(d.date),
     d.winrate == null ? "" : (d.winrate * 100).toFixed(2),
@@ -101,7 +101,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Отчёт");
 
-  const companyHeader = ["Тикер", "Компания", "Предсказаний"];
+  const companyHeader = ["Тикер", "Компания", "Прогнозов"];
   const companyBody = (data.companyPredictCounts ?? []).map((c) => [c.ticker, c.name, c.count]);
   const wsCo = XLSX.utils.aoa_to_sheet([companyHeader, ...companyBody]);
   XLSX.utils.book_append_sheet(wb, wsCo, "По компаниям");
@@ -184,7 +184,7 @@ function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]
     doc.setTextColor(245, 243, 255);
     doc.text("Дата", left + 1.5, hy);
     doc.text("Win %", 54, hy, { align: "right" });
-    doc.text("Пред.", 74, hy, { align: "right" });
+    doc.text("Прогн.", 74, hy, { align: "right" });
     doc.text("Нов.", 90, hy, { align: "right" });
     doc.text("Σ % дня", 118, hy, { align: "right" });
     doc.text("Profit", 142, hy, { align: "right" });
@@ -247,15 +247,15 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
   doc.setFontSize(10);
   const lagPdf =
     data.bestProfitLag == null
-      ? "Прибыльный горизонт: —"
-      : `Прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Profit ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
+      ? "Самый прибыльный горизонт: —"
+      : `Самый прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Profit ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
   const lines = [
     `Период: ${formatDisplayYmd(data.from)} — ${formatDisplayYmd(data.to)}`,
     `Область: ${scopeLabel}`,
     `Win / Lose: ${data.win} / ${data.lose}`,
     `Winrate: ${formatPct01(data.weightedWinrate)}`,
     `Σ %: ${data.totalResultPercentSum}`,
-    `Profit %: ${data.totalProfitSum}`,
+    `Прибыльность %: ${data.totalProfitSum}`,
     lagPdf,
     "",
   ];
@@ -271,7 +271,7 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
     y = 12;
   }
   doc.setFontSize(10);
-  y = pdfWriteParagraph(doc, "Предсказания по компаниям (тикер)", 14, y, 182, 6);
+  y = pdfWriteParagraph(doc, "Прогнозы по компаниям (тикер)", 14, y, 182, 6);
   y += 1;
   doc.setFontSize(8);
   for (const c of data.companyPredictCounts ?? []) {
@@ -423,8 +423,8 @@ export function DashboardClient({ isAdmin }: Props) {
           <div className="min-w-0 flex-1">
             <h2 className="text-2xl font-semibold text-white sm:text-3xl">Интервал и экспорт</h2>
             <p className="mt-2 text-base leading-snug text-white/60">
-              Предсказания по дате новости.
-              {isAdmin ? " Админ может смотреть всех пользователей или выбранного аналитика." : ""}
+              Статистика за выбранный период.
+              {isAdmin ? " Администратор может смотреть как всех пользователей, так и конкретного аналитика." : ""}
             </p>
             {isAdmin ? (
               <h3 className="mt-4 text-2xl font-semibold text-cyan-100 sm:text-3xl">
@@ -537,7 +537,7 @@ export function DashboardClient({ isAdmin }: Props) {
           {stats && (
             <>
               <p className="text-base font-semibold uppercase tracking-wide text-white/65">
-                Винрейт
+                Соотношение успешных (Win) / неуспешных (Lose) прогнозов
               </p>
               <p className="mt-1.5 text-4xl font-semibold tracking-tight text-white sm:text-5xl">
                 {formatPct01(stats.weightedWinrate)}
@@ -552,12 +552,12 @@ export function DashboardClient({ isAdmin }: Props) {
                 <MetricCard
                   title="Σ %"
                   value={stats.totalResultPercentSum}
-                  note="Сумма result_percent"
+                  note="Сумма процентного изменения цен"
                 />
                 <MetricCard
-                  title="Profit %"
+                  title="Прибыльность %"
                   value={stats.totalProfitSum}
-                  note="Win положит., lose отрицат."
+                  note="Положительный = прибыль Отрицательный = убыток"
                   className={
                     stats.totalProfitSum < 0
                       ? "border-rose-400/20 bg-rose-500/15 text-rose-100"

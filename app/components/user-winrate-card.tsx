@@ -92,44 +92,38 @@ export function UserWinrateCard({ initial }: Props) {
     <div className="space-y-4">
       <aside className={PANEL_CLASS}>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm font-semibold text-white/90">Ваш winrate</p>
-          <div className="flex items-center gap-2">
-            <span
-              className="text-[10px] text-white/40"
-              title={`Автообновление каждые ${POLL_MS / 1000} с`}
-            >
-              live
-            </span>
-            <button
-              type="button"
-              onClick={() => void onManualRefresh()}
-              disabled={manualBusy}
-              title="Обновить winrate"
-              aria-label="Обновить winrate"
-              className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className={manualBusy ? "animate-spin" : ""}
-                aria-hidden
-              >
-                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
-                <path d="M3 3v5h5" />
-                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
-                <path d="M16 21h5v-5" />
-              </svg>
-            </button>
-          </div>
+          <p className="text-sm font-semibold text-white/90">Соотношение успешных (Win) / неуспешных (Lose) прогнозов</p>
         </div>
 
-        <p className="mt-3 text-3xl font-semibold tracking-tight text-white">{pct ?? "—"}</p>
+        <div className="mt-3 flex items-center gap-3">
+          <p className="text-3xl font-semibold tracking-tight text-white">{pct ?? "—"}</p>
+          <button
+            type="button"
+            onClick={() => void onManualRefresh()}
+            disabled={manualBusy}
+            title="Обновить"
+            aria-label="Обновить"
+            className="flex size-8 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/5 text-white/85 transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              width="16"
+              height="16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className={manualBusy ? "animate-spin" : ""}
+              aria-hidden
+            >
+              <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+              <path d="M3 3v5h5" />
+              <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+              <path d="M16 21h5v-5" />
+            </svg>
+          </button>
+        </div>
 
         <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
           <div className="rounded-xl border border-white/10 bg-white/5 p-3">
@@ -141,7 +135,7 @@ export function UserWinrateCard({ initial }: Props) {
             <div className="mt-1 font-mono text-base text-rose-200">{stats.lose}</div>
           </div>
           <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-            <div className="text-white/55">W:L</div>
+            <div className="text-white/55">Win:Lose</div>
             <div className="mt-1 font-mono text-base text-white/85">
               {stats.total > 0 ? `${stats.win}:${stats.lose}` : "—"}
             </div>
@@ -169,7 +163,7 @@ export function UserWinrateCard({ initial }: Props) {
             </span>
           </li>
           <li className="flex items-baseline justify-between gap-3">
-            <span className="text-white/60">Предсказаний</span>
+            <span className="text-white/60">Прогнозов</span>
             <span className="font-mono text-base font-semibold tabular-nums text-violet-200">
               {stats.predictsCount}
             </span>
@@ -212,7 +206,7 @@ export function UserWinrateCard({ initial }: Props) {
       </aside>
 
       <p className="px-1 text-[11px] leading-relaxed text-white/45">
-        *дата старшей новости = {oldestHuman} (дата самой старой новости)
+        *дата и время самой старой новости = {oldestHuman}
       </p>
     </div>
   );
