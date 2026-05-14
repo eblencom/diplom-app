@@ -10,7 +10,7 @@ type LandingHeroProps = {
 
 const HERO_FEATURES = [
   ["Новости", "Фильтры по компаниям и категориям"],
-  ["Прогнозы", "Результат, winrate и profit"],
+  ["Прогнозы", "Результат, winrate и результативность"],
   ["Дашборд", "Графики и экспорт отчётов"],
 ] as const;
 
@@ -61,7 +61,10 @@ export function LandingHero({ issuersCount }: LandingHeroProps) {
               <span className="hidden text-white/25 sm:inline" aria-hidden>
                 ·
               </span>
-              <span className="font-medium text-emerald-200/85">MOEX</span>
+              <span className="text-white/82">
+                Источник цен:{" "}
+                <span className="font-semibold text-emerald-200/95">MOEX</span>
+              </span>
             </p>
             <ul className="mt-7 grid w-full gap-3 sm:grid-cols-3">
               {HERO_FEATURES.map(([title, text]) => (

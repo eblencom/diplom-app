@@ -11,6 +11,7 @@ import {
 } from "@/lib/predict-lag";
 import type { UserPredictOnNews } from "@/lib/predicts-types";
 
+// forma v kartochke novosti: POST prognoza, opros GET poka status expect, grafik minutnoj ceny
 type Props = {
   newsId: number;
   initialPredicts: UserPredictOnNews[];
@@ -76,6 +77,8 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
   const [lagMinutes, setLagMinutes] = useState(DEFAULT_LAG_MINUTES);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /** id прогноза → карточка свёрнута (скрыты детали и график) */
+  const [collapsedPredictIds, setCollapsedPredictIds] = useState<Set<number>>(() => new Set());
 
   const usedLags = useMemo(() => {
     const s = new Set<number>();
@@ -205,9 +208,29 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
         return;
       }
       setPredicts((prev) => prev.filter((p) => p.id !== predictId));
+      setCollapsedPredictIds((prev) => {
+        if (!prev.has(predictId)) {
+          return prev;
+        }
+        const next = new Set(prev);
+        next.delete(predictId);
+        return next;
+      });
     } catch {
       setError("Ошибка сети");
     }
+  };
+
+  const togglePredictCollapsed = (predictId: number) => {
+    setCollapsedPredictIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(predictId)) {
+        next.delete(predictId);
+      } else {
+        next.add(predictId);
+      }
+      return next;
+    });
   };
 
   return (
@@ -262,13 +285,15 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                       : "border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25"
                 : "border-violet-500/20 bg-gradient-to-br from-black/40 via-[#0f0828]/80 to-violet-950/25";
 
+            const isCollapsed = collapsedPredictIds.has(predict.id);
+
             return (
             <li
               key={predict.id}
               className={`rounded-xl border p-4 text-base shadow-inner shadow-black/20 ${closedCardClass}`}
             >
               <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="text-base text-white/85">
+                <div className="min-w-0 flex-1 text-base text-white/85">
                   <span className="text-white/55">Тональность: </span>
                   <span className={predictionTextClass(predict.prediction)}>
                     {predictionLabel(predict.prediction)}
@@ -277,74 +302,85 @@ export function NewsPredictPanel({ newsId, initialPredicts }: Props) {
                     · горизонт {formatWaitHorizon(predict.lagMinutes)}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void onDelete(predict.id)}
-                  className="text-sm text-rose-300/90 underline-offset-2 hover:text-rose-200 hover:underline"
-                >
-                  Удалить
-                </button>
+                <div className="flex shrink-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+                  <button
+                    type="button"
+                    onClick={() => togglePredictCollapsed(predict.id)}
+                    aria-expanded={!isCollapsed}
+                    className="rounded-lg border border-white/20 bg-white/[0.06] px-3 py-1.5 text-sm text-white/80 transition hover:border-white/35 hover:bg-white/[0.1] hover:text-white"
+                  >
+                    {isCollapsed ? "Развернуть" : "Свернуть"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void onDelete(predict.id)}
+                    className="text-sm text-rose-300/90 underline-offset-2 hover:text-rose-200 hover:underline"
+                  >
+                    Удалить
+                  </button>
+                </div>
               </div>
 
-              {predict.status === "expect" ? (
-                <div className="mt-2 inline-flex items-center gap-2 text-sm text-white/60">
-                  <span
-                    className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
-                    aria-hidden
-                  />
-                  Ожидание цены через {formatWaitHorizon(predict.lagMinutes)} после минуты новости
-                </div>
-              ) : (
-                <>
-                  {resultLabel(predict.result) ? (
-                    <p className="mt-2 text-base text-white/90">
-                      Результат:{" "}
-                      <span className={resultTextClass(predict.result)}>
-                        {resultLabel(predict.result)}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="mt-2 text-white/55">
-                      Прогноз нейтральный — итог «успех/неуспех» не применяется.
-                    </p>
-                  )}
-
-                  {predict.resultPercent !== null && predict.resultPercent !== undefined && (
-                    <p className="mt-1 text-white/75">
-                      Изменение цены:{" "}
-                      <span className="font-medium text-white">
-                        {predict.resultPercent > 0 ? "+" : ""}
-                        {predict.resultPercent.toFixed(2)}%
-                      </span>
-                    </p>
-                  )}
-
-                  {predict.profit !== null && predict.profit !== undefined && (
-                    <p className="mt-1 text-white/75">
-                      Profit:{" "}
-                      <span className="font-medium text-white">
-                        {predict.profit > 0 ? "+" : ""}
-                        {predict.profit.toFixed(2)}%
-                      </span>
-                    </p>
-                  )}
-
-                  {predict.priceBefore !== null &&
-                    predict.priceAfter !== null &&
-                    Number.isFinite(predict.priceBefore) &&
-                    Number.isFinite(predict.priceAfter) && (
-                      <>
-                        <p className="mt-2 font-mono text-sm text-white/70">
-                          Цена A — B: {predict.priceBefore.toFixed(2)} → {predict.priceAfter.toFixed(2)}
-                        </p>
-                        <PredictMinutePathChart
-                          predictId={predict.id}
-                          lagMinutes={predict.lagMinutes}
-                        />
-                      </>
+              {!isCollapsed &&
+                (predict.status === "expect" ? (
+                  <div className="mt-2 inline-flex items-center gap-2 text-sm text-white/60">
+                    <span
+                      className="inline-block size-3.5 animate-spin rounded-full border-2 border-white/25 border-t-violet-400"
+                      aria-hidden
+                    />
+                    Ожидание цены через {formatWaitHorizon(predict.lagMinutes)} после минуты новости
+                  </div>
+                ) : (
+                  <>
+                    {resultLabel(predict.result) ? (
+                      <p className="mt-2 text-base text-white/90">
+                        Результат:{" "}
+                        <span className={resultTextClass(predict.result)}>
+                          {resultLabel(predict.result)}
+                        </span>
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-white/55">
+                        Прогноз нейтральный — итог «успех/неуспех» не применяется.
+                      </p>
                     )}
-                </>
-              )}
+
+                    {predict.resultPercent !== null && predict.resultPercent !== undefined && (
+                      <p className="mt-1 text-white/75">
+                        Изменение цены:{" "}
+                        <span className="font-medium text-white">
+                          {predict.resultPercent > 0 ? "+" : ""}
+                          {predict.resultPercent.toFixed(2)}%
+                        </span>
+                      </p>
+                    )}
+
+                    {predict.profit !== null && predict.profit !== undefined && (
+                      <p className="mt-1 text-white/75">
+                        Результативность:{" "}
+                        <span className="font-medium text-white">
+                          {predict.profit > 0 ? "+" : ""}
+                          {predict.profit.toFixed(2)}%
+                        </span>
+                      </p>
+                    )}
+
+                    {predict.priceBefore !== null &&
+                      predict.priceAfter !== null &&
+                      Number.isFinite(predict.priceBefore) &&
+                      Number.isFinite(predict.priceAfter) && (
+                        <>
+                          <p className="mt-2 font-mono text-sm text-white/70">
+                            Цена A — B: {predict.priceBefore.toFixed(2)} → {predict.priceAfter.toFixed(2)}
+                          </p>
+                          <PredictMinutePathChart
+                            predictId={predict.id}
+                            lagMinutes={predict.lagMinutes}
+                          />
+                        </>
+                      )}
+                  </>
+                ))}
             </li>
             );
           })}

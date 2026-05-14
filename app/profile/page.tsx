@@ -27,7 +27,7 @@ export default async function ProfilePage() {
         <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-5 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-7 md:p-9">
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl">Настройки профиля</h1>
           <p className="mt-3 text-base text-white/65 sm:text-lg">
-            Логин, пароль, Telegram и тикеры для рассылки. Для смены логина и пароля нужен
+            Логин, пароль, Telegram и цены для рассылки. Для смены логина и пароля нужен
             текущий пароль.
           </p>
 

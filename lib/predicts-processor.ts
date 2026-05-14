@@ -22,6 +22,7 @@ function numberOrNaN(value: string | number | null) {
   return typeof value === "number" ? value : Number(value);
 }
 
+// zakrytie statusa expect: est' price_before i price_after — schitaem result, result_percent, profit
 export async function closeExpectingPredicts(): Promise<number> {
   const result = await sql<ExpectRow>(
     `

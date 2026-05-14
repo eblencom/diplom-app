@@ -1,9 +1,8 @@
-import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AppHeader } from "@/app/components/app-header";
-import { NewsHomeFilters } from "@/app/components/news-home-filters";
-import { TickerTape } from "@/app/components/ticker-tape";
+import { HomeScrollShell } from "@/app/components/home-scroll-shell";
+import { HomeWinrateAside } from "@/app/components/home-winrate-aside";
 import { NewsPredictPanel } from "@/app/components/news-predict-panel";
 import { NewsPriceBefore } from "@/app/components/news-price-before";
 import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link";
@@ -18,6 +17,7 @@ import {
   getUserNewsFavoriteCompanyIds,
 } from "@/lib/news-favorites";
 import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
+import { validateNewsDateParam } from "@/lib/news-date-param";
 import { getCurrentSession } from "@/lib/session";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
 import type { UserPredictOnNews } from "@/lib/predicts-types";
@@ -29,6 +29,8 @@ type HomePageProps = {
     company?: string;
     category?: string;
     favorites?: string;
+    from?: string;
+    to?: string;
   }>;
 };
 
@@ -112,18 +114,28 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const favRaw = params.favorites?.trim().toLowerCase() ?? "";
   const favoritesOnly = favRaw === "1" || favRaw === "true" || favRaw === "yes";
 
+  const dateFrom = validateNewsDateParam(params.from?.trim());
+  const dateTo = validateNewsDateParam(params.to?.trim());
+  const datePart = {
+    ...(dateFrom ? { dateFrom } : {}),
+    ...(dateTo ? { dateTo } : {}),
+  };
+
   const listFilters = favoritesOnly
-    ? { favoritesOnly: true as const }
-    : companyId != null || categoryFilter != null
+    ? Object.keys(datePart).length > 0
+      ? { favoritesOnly: true as const, ...datePart }
+      : { favoritesOnly: true as const }
+    : companyId != null || categoryFilter != null || Object.keys(datePart).length > 0
       ? {
           ...(companyId != null ? { companyId } : {}),
           ...(categoryFilter != null ? { category: categoryFilter } : {}),
+          ...datePart,
         }
       : undefined;
 
   const [newsPage, companies, winrateInitial, favoriteCompanyIds, favoriteCategories] =
     await Promise.all([
-      // tyt vse vmeste gruzim chtob ne tormozilo
+      // parallel: lenta, kompanii, vinrejt, izbrannoe — odin zahod k BD, menshe zaderzhki
       getNewsPage(currentPage, 10, session.userId, listFilters),
       getCompaniesForNewsFilter(),
       getUserWinrateStats(session.userId),
@@ -134,30 +146,18 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   return (
     <main className="flex min-h-0 min-w-0 flex-1 flex-col bg-[#05021b] px-4 py-6 text-white sm:px-6 sm:py-8">
       <section className={APP_CONTENT_MAX_CLASS}>
-        <AppHeader login={session.login} role={session.role} />
+        <div className="mb-5 sm:mb-6">
+          <AppHeader login={session.login} role={session.role} />
+        </div>
 
-        <TickerTape />
-
+        <HomeScrollShell
+          companies={companies}
+          favoriteCompanyIds={favoriteCompanyIds}
+          favoriteCategories={favoriteCategories}
+          favoritesFilterActive={favoritesOnly}
+        >
         <div className="rounded-3xl border border-white/15 bg-[#0f0a35]/65 p-4 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-7 md:p-9">
-          {/* zdes prosto obshiy blok lenta+filtry */}
-          <h1 className="text-3xl font-semibold leading-tight sm:text-4xl md:text-5xl">
-            Последние новости финансового мира
-          </h1>
-
-          <Suspense
-            fallback={
-              <div className="mt-6 h-24 animate-pulse rounded-2xl bg-white/5" aria-hidden />
-            }
-          >
-            <NewsHomeFilters
-              companies={companies}
-              favoriteCompanyIds={favoriteCompanyIds}
-              favoriteCategories={favoriteCategories}
-              favoritesFilterActive={favoritesOnly}
-            />
-          </Suspense>
-
-          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_320px] lg:items-start">
             <div className="space-y-4">
             {newsPage.items.length === 0 && (
               <div className="rounded-2xl border border-white/15 bg-black/20 p-5 text-white/70">
@@ -233,9 +233,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             ))}
             </div>
 
-            <div className="lg:sticky lg:top-6">
+            <HomeWinrateAside>
               <UserWinrateCard initial={winrateInitial} />
-            </div>
+            </HomeWinrateAside>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -248,6 +248,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 favoritesOnly,
                 companyId: favoritesOnly ? undefined : companyId,
                 category: favoritesOnly ? undefined : categoryFilter,
+                dateFrom,
+                dateTo,
               })}`}
               className={`rounded-full border px-5 py-2.5 text-base transition ${
                 newsPage.page <= 1
@@ -263,6 +265,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                 favoritesOnly,
                 companyId: favoritesOnly ? undefined : companyId,
                 category: favoritesOnly ? undefined : categoryFilter,
+                dateFrom,
+                dateTo,
               })}`}
               className={`rounded-full border px-5 py-2.5 text-base transition ${
                 newsPage.page >= newsPage.totalPages
@@ -274,6 +278,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </Link>
           </div>
         </div>
+        </HomeScrollShell>
       </section>
     </main>
   );

@@ -17,6 +17,45 @@ function lagCaption(lagMinutes: number) {
   return `MOEX 1m · ${m} мин`;
 }
 
+/** Шаг подписей оси X в минутах (индекс точки = минута от A). */
+function xAxisTickStepMinutes(lagMinutes: number): number {
+  const lag = Math.max(0, Math.round(lagMinutes));
+  if (lag <= 10) {
+    return 1;
+  }
+  if (lag <= 60) {
+    return 5;
+  }
+  if (lag <= 240) {
+    return 10;
+  }
+  return 30;
+}
+
+function formatXTickFromBegin(begin: string): string {
+  if (begin.length >= 16) {
+    return begin.slice(11, 16);
+  }
+  return begin;
+}
+
+function buildXAxisTicks(points: Point[], lagMinutes: number): { i: number; label: string }[] {
+  const n = points.length;
+  if (n === 0) {
+    return [];
+  }
+  const step = xAxisTickStepMinutes(lagMinutes);
+  const ticks: { i: number; label: string }[] = [];
+  for (let i = 0; i < n; i += step) {
+    ticks.push({ i, label: formatXTickFromBegin(points[i].begin) });
+  }
+  const last = n - 1;
+  if (last > 0 && ticks[ticks.length - 1]!.i !== last) {
+    ticks.push({ i: last, label: formatXTickFromBegin(points[last].begin) });
+  }
+  return ticks;
+}
+
 function buildPathSegments(
   points: Point[],
   x: (i: number) => number,
@@ -94,19 +133,38 @@ export function PredictMinutePathChart({ predictId, lagMinutes }: Props) {
     const lo = min - pad;
     const hi = max + pad;
     const w = 560;
-    const h = 200;
+    const h = 222;
     const padL = 36;
     const padR = 12;
     const padT = 16;
-    const padB = 28;
+    const padB = 50;
     const innerW = w - padL - padR;
     const innerH = h - padT - padB;
     const n = Math.max(1, points.length - 1);
     const x = (i: number) => padL + (innerW * i) / n;
     const yOf = (v: number) => padT + innerH - ((v - lo) / (hi - lo)) * innerH;
     const path = buildPathSegments(points, x, yOf);
-    return { w, h, path, x, yOf, lo, hi, padL, padT, innerW, innerH, first: points[0], last: points[points.length - 1] };
-  }, [points]);
+    const xTicks = buildXAxisTicks(points, lagMinutes);
+    const gridBottomY = padT + innerH;
+    return {
+      w,
+      h,
+      path,
+      x,
+      yOf,
+      lo,
+      hi,
+      padL,
+      padT,
+      padB,
+      innerW,
+      innerH,
+      gridBottomY,
+      first: points[0],
+      last: points[points.length - 1],
+      xTicks,
+    };
+  }, [points, lagMinutes]);
 
   if (error) {
     return (
@@ -118,7 +176,7 @@ export function PredictMinutePathChart({ predictId, lagMinutes }: Props) {
 
   if (points === null) {
     return (
-      <div className="mt-3 flex h-[200px] items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-violet-950/40 to-black/40 text-xs text-white/50">
+      <div className="mt-3 flex h-[222px] items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-violet-950/40 to-black/40 text-xs text-white/50">
         Загрузка минутных цен…
       </div>
     );
@@ -126,13 +184,13 @@ export function PredictMinutePathChart({ predictId, lagMinutes }: Props) {
 
   if (!layout) {
     return (
-      <div className="mt-3 flex h-[200px] items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-violet-950/40 to-black/40 text-xs text-white/50">
+      <div className="mt-3 flex h-[222px] items-center justify-center rounded-xl border border-white/10 bg-gradient-to-br from-violet-950/40 to-black/40 text-xs text-white/50">
         Нет данных для графика
       </div>
     );
   }
 
-  const { w, h, path, x, yOf, lo, hi, first, last } = layout;
+  const { w, h, path, x, yOf, lo, hi, padB, padT, gridBottomY, xTicks, first, last } = layout;
   const fb = first.close;
   const lb = last.close;
 
@@ -175,10 +233,42 @@ export function PredictMinutePathChart({ predictId, lagMinutes }: Props) {
             </g>
           );
         })}
+        {xTicks.map(({ i }) => {
+          const cx = x(i);
+          return (
+            <line
+              key={`vgrid-${i}`}
+              x1={cx}
+              x2={cx}
+              y1={padT}
+              y2={gridBottomY}
+              stroke="rgba(255,255,255,0.06)"
+              strokeWidth="1"
+            />
+          );
+        })}
+        {xTicks.map(({ i, label }) => {
+          const cx = x(i);
+          const ty = h - 24;
+          const rotate = xTicks.length > 16 ? -36 : 0;
+          return (
+            <text
+              key={`xtick-${i}`}
+              x={cx}
+              y={ty}
+              fill="rgba(255,255,255,0.42)"
+              fontSize="8"
+              textAnchor="middle"
+              transform={rotate !== 0 ? `rotate(${rotate} ${cx} ${ty})` : undefined}
+            >
+              {label}
+            </text>
+          );
+        })}
         {path && path.includes("L") ? (
           <>
             <path
-              d={`${path} L ${x(points.length - 1).toFixed(1)} ${h - 28} L ${x(0).toFixed(1)} ${h - 28} Z`}
+              d={`${path} L ${x(points.length - 1).toFixed(1)} ${h - padB} L ${x(0).toFixed(1)} ${h - padB} Z`}
               fill={`url(#fill-${predictId})`}
               opacity={0.9}
             />

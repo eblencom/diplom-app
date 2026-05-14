@@ -1,0 +1,53 @@
+@startuml
+skinparam monochrome true
+skinparam shadowing false
+skinparam defaultFontName Arial
+skinparam packageStyle rectangle
+skinparam nodesep 28
+skinparam ranksep 22
+
+title DiplomApp — варианты использования (компактно)
+
+' Tri aktora v ryad: sleva — centr — sprava (nad sistemoj)
+left to right direction
+
+actor "Гость" as G
+actor "Аналитик" as U
+actor "Администратор" as A
+G -[hidden]right- U
+U -[hidden]right- A
+
+rectangle "DiplomApp" {
+  usecase "Регистрация,\nвход, выход" as UC1
+  usecase "Просмотр публичных\nновостей и эмитентов" as UC2
+  usecase "Лента, фильтры,\nизбранное" as UC3
+  usecase "Прогноз по новости,\nценам, результат" as UC4
+  usecase "Дашборд, винрейт,\nExcel / PDF" as UC5
+  usecase "Профиль, Telegram,\nподписки" as UC6
+  usecase "Справка" as UC7
+  usecase "Пользователи,\nблокировки, админ-дашборд" as UC8
+}
+
+G --> UC1
+G --> UC2
+
+U --> UC1
+U --> UC3
+U --> UC4
+U --> UC5
+U --> UC6
+U --> UC7
+
+A --> UC1
+A --> UC3
+A --> UC4
+A --> UC5
+A --> UC6
+A --> UC7
+A --> UC8
+
+note bottom of A
+  Администратор = сценарии аналитика + UC8.
+end note
+
+@enduml

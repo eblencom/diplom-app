@@ -16,6 +16,7 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
   const [login, setLogin] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [pdConsent, setPdConsent] = useState(false);
   const [error, setError] = useState("");
   const [pending, setPending] = useState(false);
 
@@ -32,6 +33,11 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
 
     if (mode === "register" && password !== confirmPassword) {
       setError("Пароли не совпадают.");
+      return;
+    }
+
+    if (mode === "register" && !pdConsent) {
+      setError("Нужно согласие на обработку персональных данных.");
       return;
     }
 
@@ -112,7 +118,10 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
                   : "bg-white text-[#0d0d22]"
                 : "text-white/70 hover:text-white"
             }`}
-            onClick={() => setMode("login")}
+            onClick={() => {
+              setMode("login");
+              setPdConsent(false);
+            }}
           >
             Вход
           </button>
@@ -125,7 +134,10 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
                   : "bg-white text-[#0d0d22]"
                 : "text-white/70 hover:text-white"
             }`}
-            onClick={() => setMode("register")}
+            onClick={() => {
+              setMode("register");
+              setPdConsent(false);
+            }}
           >
             Регистрация
           </button>
@@ -237,6 +249,21 @@ export function AuthForm({ variant = "default", className }: AuthFormProps = {})
           >
             {pending ? "Подождите..." : submitLabel}
           </button>
+
+          {mode === "register" ? (
+            <label className="flex cursor-pointer items-start gap-2.5 pt-0.5">
+              <input
+                type="checkbox"
+                checked={pdConsent}
+                onChange={(e) => setPdConsent(e.target.checked)}
+                className="mt-0.5 size-4 shrink-0 cursor-pointer rounded border border-white/35 bg-[#12082c] accent-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/45"
+              />
+              <span className="text-pretty text-left text-[11px] leading-snug text-white/55 sm:text-xs">
+                Согласие на обработку персональных данных в целях регистрации и предоставления доступа к
+                сервису.
+              </span>
+            </label>
+          ) : null}
 
           <div className={isLanding ? "" : "min-h-[3rem]"}>
             {error ? (

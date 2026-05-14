@@ -9,22 +9,22 @@ const CAPABILITY_CARDS = [
   {
     icon: "1",
     title: "Новости и фильтры",
-    text: "Лента публикаций по компаниям, категориям и избранным тикерам.",
+    text: "Лента публикаций по компаниям, категориям и избранным ценам.",
   },
   {
     icon: "2",
-    title: "Котировки MOEX",
+    title: "Цены MOEX",
     text: "Свежие цены и минутные значения для проверки реакции рынка.",
   },
   {
     icon: "3",
     title: "Прогнозы и винрейт",
-    text: "Сохранение прогнозов, результат, profit и статистика на дашборде.",
+    text: "Сохранение прогнозов, результат, результативность и статистика на дашборде.",
   },
   {
     icon: "4",
-    title: "Telegram по тикерам",
-    text: "Уведомления о котировках и новых новостях по выбранным компаниям.",
+    title: "Telegram по ценам",
+    text: "Уведомления о ценах и новых новостях по выбранным компаниям.",
   },
 ] as const;
 
@@ -35,7 +35,7 @@ export function LandingCapabilitiesChips() {
         После входа
       </h2>
       <p className="mx-auto mt-2 max-w-3xl text-pretty text-base leading-relaxed text-[#e8e0d4]/80 sm:text-lg">
-        Рабочий стол с фильтрами, котировками и статистикой прогнозов — всё в одном месте.
+        Рабочий стол с фильтрами, ценами и статистикой прогнозов — всё в одном месте.
       </p>
       <ul className="mt-4 grid gap-3 sm:mt-5 sm:grid-cols-2 lg:grid-cols-4">
         {CAPABILITY_CARDS.map((card) => (
@@ -146,29 +146,6 @@ export function LandingNewsPreviewBlock({ items }: { items: NewsPreviewPublic[] 
           </ul>
         ))}
       </div>
-    </section>
-  );
-}
-
-export function LandingRegisterCta() {
-  return (
-    <section className="mt-16 rounded-t-3xl rounded-b-none border border-b-0 border-[#e8e0d4]/28 bg-gradient-to-br from-[#f4efe6]/[0.18] via-violet-950/45 to-[#06041a] px-5 pb-8 pt-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] sm:mt-24 sm:px-8 sm:pb-10 sm:pt-10 md:px-12 md:pb-12 md:pt-12">
-      <h2 className="text-balance text-2xl font-semibold text-[#faf6ef] sm:text-3xl md:text-4xl">
-        Получите доступ к анализу
-      </h2>
-      <p className="mx-auto mt-4 max-w-2xl text-pretty text-base leading-relaxed text-white/72 sm:mt-5 sm:text-lg md:max-w-3xl">
-        Зарегистрируйтесь, чтобы сохранять прогнозы по новостям, видеть статистику
-        (винрейт), минутные графики цены MOEX и персональную ленту на главной.
-      </p>
-      <a
-        href="#auth-block"
-        className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full border border-white/40 bg-white px-7 py-3 text-base font-semibold text-[#12082c] transition hover:bg-white/90 sm:mt-8 sm:px-8 sm:text-lg"
-      >
-        Зарегистрироваться
-      </a>
-      <p className="mx-auto mt-4 max-w-xl text-pretty text-sm leading-relaxed text-white/50 sm:mt-5 sm:text-base">
-        В форме выше переключитесь на вкладку «Регистрация», если вы ещё не в системе.
-      </p>
     </section>
   );
 }

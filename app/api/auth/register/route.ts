@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { pickClientIpFromRequest } from "@/lib/client-ip";
 import { AuthError, registerUser } from "@/lib/auth";
 import { createSessionToken, setSessionCookie } from "@/lib/session";
 
@@ -13,7 +14,7 @@ export async function POST(request: Request) {
     const login = body.login ?? "";
     const password = body.password ?? "";
 
-    const user = await registerUser(login, password);
+    const user = await registerUser(login, password, pickClientIpFromRequest(request));
     const token = await createSessionToken({
       userId: user.id,
       login: user.login,
@@ -25,9 +26,10 @@ export async function POST(request: Request) {
     return response;
   } catch (error) {
     if (error instanceof AuthError) {
+      const status = error.code === "REGISTRATION_IP_LIMIT" ? 429 : 400;
       return NextResponse.json(
         { error: error.message, code: error.code },
-        { status: 400 },
+        { status },
       );
     }
 

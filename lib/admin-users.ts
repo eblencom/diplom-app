@@ -69,3 +69,32 @@ export async function setUserBlockedByAdmin(input: {
 
   return { ok: true };
 }
+
+export type AdminDeleteUserResult =
+  | { ok: true }
+  | { ok: false; status: 400 | 403 | 404; message: string };
+
+export async function deleteUserByAdmin(input: {
+  actorUserId: number;
+  targetUserId: number;
+}): Promise<AdminDeleteUserResult> {
+  if (input.targetUserId === input.actorUserId) {
+    return { ok: false, status: 400, message: "Нельзя удалить свою учётную запись." };
+  }
+
+  const target = await sql<{ id: string | number; role: string }>(
+    `SELECT id, role FROM users WHERE id = $1 LIMIT 1`,
+    [input.targetUserId],
+  );
+  const t = target.rows[0];
+  if (!t) {
+    return { ok: false, status: 404, message: "Пользователь не найден." };
+  }
+  if (t.role === "admin") {
+    return { ok: false, status: 403, message: "Удаление администраторов запрещено." };
+  }
+
+  await sql(`DELETE FROM users WHERE id = $1 AND role = 'analyst'`, [input.targetUserId]);
+
+  return { ok: true };
+}

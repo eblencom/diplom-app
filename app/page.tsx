@@ -5,7 +5,6 @@ import {
   LandingCapabilitiesChips,
   LandingCompaniesBlock,
   LandingNewsPreviewBlock,
-  LandingRegisterCta,
 } from "@/app/components/landing-public-blocks";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { getCompaniesForNewsFilter, getLatestNewsPreview } from "@/lib/news";
@@ -36,13 +35,15 @@ export default async function Home() {
       <main className="relative z-10 flex min-h-0 w-full max-w-full flex-col overflow-x-clip bg-transparent px-3 pb-0 pt-[max(0.75rem,env(safe-area-inset-top))] text-white sm:px-5 sm:pt-5 md:px-6">
       <div className={`relative ${APP_CONTENT_MAX_CLASS}`}>
         <LandingHero issuersCount={companies.length} />
-        <section id="auth-block" className="scroll-mt-20 mt-10 flex justify-center sm:mt-14">
-          <AuthForm variant="landing" />
-        </section>
         <LandingCapabilitiesChips />
         <LandingCompaniesBlock companies={companies} sectionId="issuers" />
         <LandingNewsPreviewBlock items={newsPreview} />
-        <LandingRegisterCta />
+        <section
+          id="auth-block"
+          className="mt-16 scroll-mt-20 flex justify-center rounded-t-3xl rounded-b-none border border-b-0 border-[#e8e0d4]/28 bg-gradient-to-br from-[#f4efe6]/[0.12] via-violet-950/35 to-[#06041a] px-5 py-8 shadow-[inset_0_1px_0_rgba(255,255,255,0.06)] sm:mt-24 sm:px-8 sm:py-10 md:px-12 md:py-12"
+        >
+          <AuthForm variant="landing" />
+        </section>
       </div>
     </main>
     </>

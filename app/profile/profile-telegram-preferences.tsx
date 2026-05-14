@@ -143,7 +143,7 @@ export function ProfileTelegramPreferences({
         <h2 className="text-2xl font-semibold text-white sm:text-3xl">Telegram</h2>
         <p className="mt-3 text-base leading-relaxed text-white/65">
           Укажите ваш Telegram username (как в профиле Telegram, без @). После привязки чата бот
-          будет присылать цены MOEX и новости по выбранным тикерам с вашим интервалом рассылки.
+          будет присылать цены MOEX и новости по выбранным ценам с вашим интервалом рассылки.
         </p>
         {initialTgChatId != null ? (
           <p className="mt-3 text-base font-medium text-emerald-300/90">
@@ -178,9 +178,9 @@ export function ProfileTelegramPreferences({
       </form>
 
       <form onSubmit={onSaveAlerts} className="rounded-2xl border border-white/12 bg-black/25 p-5 sm:p-6">
-        <h3 className="text-2xl font-medium text-white">Тикеры для рассылки в Telegram</h3>
+        <h3 className="text-2xl font-medium text-white">Цены для рассылки в Telegram</h3>
         <p className="mt-2 text-base leading-relaxed text-white/60">
-          Отметьте компании: котировки MOEX и новости по этим эмитентам будут приходить через
+          Отметьте компании: цены MOEX и новости по этим эмитентам будут приходить через
           выбранный интервал.
         </p>
         <label className="mt-5 flex max-w-md flex-col gap-2 text-base text-white/70">
@@ -245,7 +245,7 @@ export function ProfileTelegramPreferences({
       <div className="rounded-2xl border border-violet-400/25 bg-violet-950/25 p-5 text-base text-white/75">
         <p className="text-lg font-medium text-white">Как привязать Telegram</p>
         <ol className="mt-3 list-decimal space-y-2 pl-5">
-          <li>Сохраните username и список тикеров на этой странице.</li>
+          <li>Сохраните username и список цен на этой странице.</li>
           <li>
             {link ? (
               <>

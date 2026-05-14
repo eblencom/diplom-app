@@ -146,32 +146,6 @@ export function UserWinrateCard({ initial }: Props) {
       </aside>
 
       <aside className={PANEL_CLASS}>
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-cyan-200/75">
-          Сводка по базе
-        </p>
-        <ul className="mt-3 space-y-2.5 text-sm">
-          <li className="flex items-baseline justify-between gap-3 border-b border-white/5 pb-2">
-            <span className="text-white/60">Компаний</span>
-            <span className="font-mono text-base font-semibold tabular-nums text-cyan-100">
-              {stats.companiesCount}
-            </span>
-          </li>
-          <li className="flex items-baseline justify-between gap-3 border-b border-white/5 pb-2">
-            <span className="text-white/60">Новостей</span>
-            <span className="font-mono text-base font-semibold tabular-nums text-cyan-100">
-              {stats.newsCount}
-            </span>
-          </li>
-          <li className="flex items-baseline justify-between gap-3">
-            <span className="text-white/60">Прогнозов</span>
-            <span className="font-mono text-base font-semibold tabular-nums text-violet-200">
-              {stats.predictsCount}
-            </span>
-          </li>
-        </ul>
-      </aside>
-
-      <aside className={PANEL_CLASS}>
         <div className="space-y-2">
           {(() => {
             const raw = process.env.NEXT_PUBLIC_TELEGRAM_BOT_USERNAME?.trim() ?? "";

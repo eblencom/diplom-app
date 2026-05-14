@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { setUserBlockedByAdmin } from "@/lib/admin-users";
+import { deleteUserByAdmin, setUserBlockedByAdmin } from "@/lib/admin-users";
 import { getCurrentSession } from "@/lib/session";
 
 type Body = {
@@ -34,6 +34,30 @@ export async function PATCH(request: Request, ctx: { params: Promise<{ id: strin
     actorUserId: session.userId,
     targetUserId,
     isBlocked: body.isBlocked,
+  });
+
+  if (!result.ok) {
+    return NextResponse.json({ error: result.message }, { status: result.status });
+  }
+
+  return NextResponse.json({ ok: true });
+}
+
+export async function DELETE(_request: Request, ctx: { params: Promise<{ id: string }> }) {
+  const session = await getCurrentSession();
+  if (!session || session.role !== "admin") {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
+
+  const { id: idParam } = await ctx.params;
+  const targetUserId = Number(idParam);
+  if (!Number.isFinite(targetUserId) || targetUserId < 1) {
+    return NextResponse.json({ error: "bad_id" }, { status: 400 });
+  }
+
+  const result = await deleteUserByAdmin({
+    actorUserId: session.userId,
+    targetUserId,
   });
 
   if (!result.ok) {

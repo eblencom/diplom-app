@@ -122,7 +122,7 @@ async function handleUpdates() {
       if (r.rowCount === 1) {
         await sendMessage(
           msg.chat.id,
-          `Чат привязан к логину «${r.rows[0].login}». Котировки MOEX и новости по выбранным в профиле тикерам будут приходить с интервалом из настроек профиля.`,
+          `Чат привязан к логину «${r.rows[0].login}». Цены MOEX и новости по выбранным в профиле ценам будут приходить с интервалом из настроек профиля.`,
         );
       } else {
         await sendMessage(
@@ -210,7 +210,7 @@ function formatNewsWhen(d) {
 }
 
 function buildNewsMessageChunks(items) {
-  const header = "DiplomApp · новости по вашим тикерам\n";
+  const header = "DiplomApp · новости по вашим ценам\n";
   const maxLen = 3900;
   const chunks = [];
   let buf = header;

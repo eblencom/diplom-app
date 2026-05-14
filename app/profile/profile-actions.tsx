@@ -29,10 +29,6 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
   const [passwordMessage, setPasswordMessage] = useState("");
   const [passwordPending, setPasswordPending] = useState(false);
 
-  const [deletePassword, setDeletePassword] = useState("");
-  const [deleteMessage, setDeleteMessage] = useState("");
-  const [deletePending, setDeletePending] = useState(false);
-
   async function handleLoginSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoginMessage("");
@@ -98,43 +94,6 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
       setPasswordMessage("Ошибка сети. Попробуйте снова.");
     } finally {
       setPasswordPending(false);
-    }
-  }
-
-  async function handleDeleteSubmit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    setDeleteMessage("");
-
-    const confirmed = window.confirm(
-      "Вы уверены, что хотите удалить аккаунт? Действие необратимо.",
-    );
-
-    if (!confirmed) {
-      return;
-    }
-
-    setDeletePending(true);
-    try {
-      const response = await fetch("/api/profile/delete", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          password: deletePassword,
-        }),
-      });
-
-      const data = (await response.json()) as { error?: string };
-      if (!response.ok) {
-        setDeleteMessage(data.error ?? "Не удалось удалить аккаунт.");
-        return;
-      }
-
-      router.push("/");
-      router.refresh();
-    } catch {
-      setDeleteMessage("Ошибка сети. Попробуйте снова.");
-    } finally {
-      setDeletePending(false);
     }
   }
 
@@ -238,37 +197,6 @@ export function ProfileActions({ currentLogin, role }: ProfileActionsProps) {
           className="mt-4 rounded-full border border-white/40 px-5 py-2.5 text-base transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {passwordPending ? "Сохранение..." : "Сохранить пароль"}
-        </button>
-      </form>
-
-      <form
-        onSubmit={handleDeleteSubmit}
-        className="rounded-2xl border border-red-300/35 bg-red-900/15 p-6"
-      >
-        <h2 className="text-2xl font-semibold text-red-200">Удаление аккаунта</h2>
-        <p className="mt-2 text-base text-red-100/85">
-          Аккаунт будет полностью удален из базы данных.
-        </p>
-        <div className="mt-4 max-w-xl">
-          <input
-            required
-            type="password"
-            minLength={6}
-            value={deletePassword}
-            onChange={(event) => setDeletePassword(event.target.value)}
-            placeholder="Введите пароль для подтверждения"
-            className="w-full rounded-xl border border-red-200/35 bg-[#2a123f] px-4 py-3 text-lg text-white outline-none ring-red-300/60 placeholder:text-white/40 focus:ring-2"
-          />
-        </div>
-        {deleteMessage && (
-          <p className="mt-3 text-base text-red-100">{deleteMessage}</p>
-        )}
-        <button
-          disabled={deletePending}
-          type="submit"
-          className="mt-4 rounded-full border border-red-200/50 bg-red-700/70 px-5 py-2.5 text-base text-white transition hover:bg-red-700/90 disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          {deletePending ? "Удаление..." : "Удалить аккаунт"}
         </button>
       </form>
     </div>

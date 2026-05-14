@@ -9,6 +9,8 @@ import {
 import { getFavoritesWhereSql } from "@/lib/news-favorites";
 import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
+import { validateNewsDateParam } from "@/lib/news-date-param";
+
 import type { UserPredictOnNews } from "@/lib/predicts-types";
 
 export type { UserPredictOnNews };
@@ -51,7 +53,40 @@ export type NewsListFilters = {
   companyId?: number;
   category?: CategorySlug;
   favoritesOnly?: boolean;
+  /** Inclusive calendar day, `YYYY-MM-DD` (UTC-validated). */
+  dateFrom?: string;
+  /** Inclusive calendar day, `YYYY-MM-DD` (UTC-validated). */
+  dateTo?: string;
 };
+
+function appendDatetimeDateFilters(
+  clause: string,
+  whereParams: unknown[],
+  nextIndex: number,
+  filters?: Pick<NewsListFilters, "dateFrom" | "dateTo">,
+): { clause: string; whereParams: unknown[]; nextIndex: number } {
+  const dateFrom = validateNewsDateParam(filters?.dateFrom);
+  const dateTo = validateNewsDateParam(filters?.dateTo);
+  const parts: string[] = [];
+  const params = [...whereParams];
+  let idx = nextIndex;
+  if (dateFrom) {
+    parts.push(`(n.datetime::date) >= $${idx}::date`);
+    params.push(dateFrom);
+    idx += 1;
+  }
+  if (dateTo) {
+    parts.push(`(n.datetime::date) <= $${idx}::date`);
+    params.push(dateTo);
+    idx += 1;
+  }
+  if (parts.length === 0) {
+    return { clause, whereParams, nextIndex };
+  }
+  const fragment = parts.join(" AND ");
+  const newClause = clause ? `${clause} AND ${fragment}` : `WHERE ${fragment}`;
+  return { clause: newClause, whereParams: params, nextIndex: idx };
+}
 
 export type CompanyFilterRow = {
   id: number | string;
@@ -186,6 +221,11 @@ export async function getNewsPage(
     whereParams = built.params;
     nextIndex = built.nextIndex;
   }
+
+  const withDates = appendDatetimeDateFilters(clause, whereParams, nextIndex, filters);
+  clause = withDates.clause;
+  whereParams = withDates.whereParams;
+  nextIndex = withDates.nextIndex;
 
   const countResult = await sql<CountRow>(
     `

@@ -51,7 +51,7 @@ export function TickerTape({ className }: TickerTapeProps) {
       <div
         className={`mb-4 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-center text-xs text-white/50${extra}`}
       >
-        Котировки: {error}
+        Цены: {error}
       </div>
     );
   }
@@ -64,7 +64,7 @@ export function TickerTape({ className }: TickerTapeProps) {
     >
       <div className="flex items-center gap-2 border-b border-white/10 px-3 py-1.5 text-[10px] uppercase tracking-wider text-emerald-200/80">
         <span className="inline-block size-1.5 animate-pulse rounded-full bg-emerald-400" />
-        Лента котировок
+        Лента цен
       </div>
       <div className="relative h-11 overflow-hidden">
         <div

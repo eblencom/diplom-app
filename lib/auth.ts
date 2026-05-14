@@ -1,7 +1,8 @@
 import "server-only";
 
 import bcrypt from "bcryptjs";
-import { sql } from "@/lib/db";
+import { normalizeRegistrationIp } from "@/lib/client-ip";
+import { sql, withTransaction } from "@/lib/db";
 import type { UserRole } from "@/lib/session";
 
 type DbUser = {
@@ -24,7 +25,8 @@ export class AuthError extends Error {
     | "USER_EXISTS"
     | "INVALID_CREDENTIALS"
     | "USER_NOT_FOUND"
-    | "ACCESS_DISABLED";
+    | "ACCESS_DISABLED"
+    | "REGISTRATION_IP_LIMIT";
 
   constructor(
     code:
@@ -32,7 +34,8 @@ export class AuthError extends Error {
       | "USER_EXISTS"
       | "INVALID_CREDENTIALS"
       | "USER_NOT_FOUND"
-      | "ACCESS_DISABLED",
+      | "ACCESS_DISABLED"
+      | "REGISTRATION_IP_LIMIT",
     message: string,
   ) {
     super(message);
@@ -92,43 +95,62 @@ function normalizeUserId(value: number | string) {
   return parsed;
 }
 
-export async function registerUser(login: string, password: string) {
+export async function registerUser(login: string, password: string, registrationIpHeader: string) {
   const cleanLogin = assertCredentials(login, password);
-  const passwordHash = await bcrypt.hash(password, 12);
+  const ip = normalizeRegistrationIp(registrationIpHeader);
 
-  try {
-    const result = await sql<NewUserRow>(
-      `
-        INSERT INTO users (login, password, role, tg_username)
-        VALUES ($1, $2, 'analyst', '')
-        RETURNING id, login, role
-      `,
-      [cleanLogin, passwordHash],
-    );
-
-    const createdUser = result.rows[0];
-
-    if (!createdUser) {
-      throw new Error("Failed to create user.");
+  return withTransaction(async (client) => {
+    if (ip) {
+      await client.query(`SELECT pg_advisory_xact_lock(92001, hashtext($1::text))`, [ip]);
+      const countRes = await client.query<{ c: string }>(
+        `SELECT COUNT(*)::text AS c FROM users WHERE ip = $1`,
+        [ip],
+      );
+      const count = Number(countRes.rows[0]?.c ?? 0);
+      if (count >= 3) {
+        throw new AuthError(
+          "REGISTRATION_IP_LIMIT",
+          "С этого IP-адреса уже создано максимум 3 учётные записи. Войдите в существующий аккаунт или обратитесь к администратору.",
+        );
+      }
     }
 
-    return {
-      id: normalizeUserId(createdUser.id),
-      login: createdUser.login,
-      role: mapRole(createdUser.role),
-    } satisfies SafeUser;
-  } catch (error: unknown) {
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "code" in error &&
-      error.code === "23505"
-    ) {
-      throw new AuthError("USER_EXISTS", "Этот логин уже занят.");
-    }
+    const passwordHash = await bcrypt.hash(password, 12);
 
-    throw error;
-  }
+    try {
+      const result = await client.query<NewUserRow>(
+        `
+          INSERT INTO users (login, password, role, tg_username, ip)
+          VALUES ($1, $2, 'analyst', '', $3)
+          RETURNING id, login, role
+        `,
+        [cleanLogin, passwordHash, ip],
+      );
+
+      const createdUser = result.rows[0];
+
+      if (!createdUser) {
+        throw new Error("Failed to create user.");
+      }
+
+      return {
+        id: normalizeUserId(createdUser.id),
+        login: createdUser.login,
+        role: mapRole(createdUser.role),
+      } satisfies SafeUser;
+    } catch (error: unknown) {
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "23505"
+      ) {
+        throw new AuthError("USER_EXISTS", "Этот логин уже занят.");
+      }
+
+      throw error;
+    }
+  });
 }
 
 export async function loginUser(login: string, password: string) {
@@ -282,19 +304,5 @@ export async function changeUserPassword(
       WHERE id = $2
     `,
     [newPasswordHash, user.id],
-  );
-}
-
-export async function deleteUserAccount(
-  userId: number,
-  confirmationPassword: string,
-) {
-  const user = await ensurePasswordConfirmed(userId, confirmationPassword);
-  await sql(
-    `
-      DELETE FROM users
-      WHERE id = $1
-    `,
-    [user.id],
   );
 }

@@ -5,6 +5,8 @@ import { useId } from "react";
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
 import { formatDisplayYmd } from "@/lib/display-date";
 
+// diagrammy dashborda: dnevnye tochki prihodyat iz getDashboardStats (JOIN novostej po date)
+
 const PLOT_H = 168;
 const BAR_TOP_RESERVE = 10;
 const Y_AXIS_W = 52;
@@ -112,7 +114,6 @@ function WinrateBarBlock({ days }: { days: DashboardDayPoint[] }) {
   return (
     <ColumnChart
       title="Соотношение успешных (Win) / неуспешных (Lose) прогнозов по дням"
-      //subtitle="Данная диагрмма показывает изменения соотношения успешных (Win) / неуспешных (Lose) прогнозов в течении выбранного интервала"
       subtitle="Ось y - соотношение Win / Lose, ось x - даты выбранного интервала"
 
       days={days}
@@ -245,7 +246,6 @@ type DayValueConfig = {
 const COUNT_CHARTS: (DayValueConfig & { colorClass: string })[] = [
   {
     title: "Количество прогнозов за каждый день интервала",
-    //subtitle: "Данная диагрмма показывает вашу активность в течении выбранного интервала",
     subtitle: "Ось y - количество прогнозов, ось x - даты выбранного интервала",
     getValue: (d) => d.predictions,
     colorClass: "bg-violet-400/85",
@@ -265,8 +265,8 @@ const DAILY_RESULT_CHART: DayValueConfig = {
 };
 
 const DAILY_PROFIT_CHART: DayValueConfig = {
-  title: "Прибыльность за каждый день выбранного интервала",
-  subtitle: "Ось y - прибыльность, ось x - даты выбранного интервала",
+  title: "Результативность за каждый день выбранного интервала",
+  subtitle: "Ось y - результативность, ось x - даты выбранного интервала",
   getValue: (d) => d.sumProfit,
 };
 
@@ -399,12 +399,12 @@ function VisualSummaryCard({ stats }: { stats: DashboardStatsPayload }) {
       className: "border-violet-400/25 bg-violet-500/15 text-violet-100",
     },
     {
-      title: "Самая большая положительная прибыльность",
+      title: "Самая большая положительная результативность",
       value: formatSignedPercent(summary.bestPositiveProfit),
       className: "border-emerald-400/25 bg-emerald-500/15 text-emerald-100",
     },
     {
-      title: "Самая большая отрицательная прибыльность",
+      title: "Самая большая отрицательная результативность",
       value: formatSignedPercent(summary.worstNegativeProfit),
       className: "border-rose-400/25 bg-rose-500/15 text-rose-100",
     },

@@ -5,6 +5,7 @@ CREATE TABLE IF NOT EXISTS users (
   password TEXT NOT NULL,
   role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'analyst')),
   is_blocked BOOLEAN NOT NULL DEFAULT false,
+  ip VARCHAR(64) NULL,
   tg_username VARCHAR(255) NOT NULL DEFAULT '',
   tg_chat_id BIGINT NULL,
   tg_price_last_digest_at TIMESTAMP NULL,

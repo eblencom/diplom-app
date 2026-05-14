@@ -5,6 +5,7 @@ import { runAlgosForNews } from "@/lib/run-algos";
 import { getUserPredictsForNews } from "@/lib/user-predict-for-news";
 import { DEFAULT_LAG_MINUTES, isPresetLagMinutes } from "@/lib/predict-lag";
 
+// GET: prognozy polzovatelya po novosti; POST: odin gorizont, runAlgosForNews, INSERT v predicts
 type NewsExists = { id: string | number };
 
 type PredictRow = {

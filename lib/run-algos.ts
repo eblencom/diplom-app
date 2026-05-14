@@ -6,6 +6,7 @@ import { getProjectRoot } from "@/lib/project-root";
 
 import type { PredictionKind } from "@/lib/predicts-types";
 
+// python scripts/algos.py po newsId: vozvrat napravleniya (positive | neutral | negative) po tekstu
 export async function runAlgosForNews(newsId: number): Promise<PredictionKind> {
   const pythonBin = process.env.PYTHON_BIN || "python";
 

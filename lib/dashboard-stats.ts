@@ -8,6 +8,8 @@ import type {
   DashboardStatsPayload,
 } from "@/lib/dashboard-types";
 
+// agregaty dashborda po intervalu dat; privyazka k date novosti (news.datetime); admin: vse polzovateli ili odin (userId)
+
 function parseISODate(s: string): string | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) {
     return null;
@@ -92,6 +94,7 @@ export async function getDashboardStats(input: {
   from: string;
   to: string;
 }): Promise<{ ok: true; data: DashboardStatsPayload } | { ok: false; error: string }> {
+  // dalee: proverka okna dat, proverka vybrannogo id, nabor SQL, sborka days[] dlya fronta
   const from = parseISODate(input.from.trim());
   const to = parseISODate(input.to.trim());
   if (!from || !to || from > to) {

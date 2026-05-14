@@ -3,15 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import type { jsPDF } from "jspdf";
 
-import { AdminUsersPanel } from "@/app/components/admin-users-panel";
 import { DashboardCharts } from "@/app/components/dashboard-charts";
 import { DashboardCompanyPredictBars } from "@/app/components/dashboard-company-predict-bars";
 import { WinLoseDonut } from "@/app/components/win-lose-donut";
 import { embedRobotoCyrillic } from "@/lib/dashboard-pdf-cyrillic";
 import type { DashboardDayPoint, DashboardStatsPayload } from "@/lib/dashboard-types";
 import { formatDisplayYmd, parseDisplayDateToYmd } from "@/lib/display-date";
+import { formatDdMmYyyyTyping } from "@/lib/news-date-param";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
 
+// klient dashborda: interval dat, zapros statistiki, diagrammy, eksport; u admina — vybor polzovatelya
 type AdminUserExportRow = {
   id: number;
   login: string;
@@ -74,7 +75,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
   const lagLine =
     data.bestProfitLag == null
       ? "—"
-      : `${formatLagMinutes(data.bestProfitLag.lagMinutes)} · Profit ${data.bestProfitLag.sumProfit.toFixed(2)}% · закр. ${data.bestProfitLag.closedCount}`;
+      : `${formatLagMinutes(data.bestProfitLag.lagMinutes)} · Результативность ${data.bestProfitLag.sumProfit.toFixed(2)}% · закр. ${data.bestProfitLag.closedCount}`;
   const summaryRows: (string | number)[][] = [
     ["Период", `${formatDisplayYmd(data.from)} — ${formatDisplayYmd(data.to)}`],
     ["Область", scopeLabel],
@@ -82,11 +83,11 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
     ["Lose (закрытые)", data.lose],
     ["Winrate", formatPct01(data.weightedWinrate)],
     ["Σ %", data.totalResultPercentSum],
-    ["Profit %", data.totalProfitSum],
-    ["Самый прибыльный горизонт", lagLine],
+    ["Результативность %", data.totalProfitSum],
+    ["Самый результативный горизонт", lagLine],
     [],
   ];
-  const header = ["Дата", "Winrate %", "Прогнозов", "Новостей", "Σ % дня", "Profit дня", "Σ % накопит.", "Profit накопит."];
+  const header = ["Дата", "Winrate %", "Прогнозов", "Новостей", "Σ % дня", "Результативность дня", "Σ % накопит.", "Результативность накопит."];
   const body = data.days.map((d) => [
     formatDisplayYmd(d.date),
     d.winrate == null ? "" : (d.winrate * 100).toFixed(2),
@@ -101,7 +102,7 @@ async function buildWorkbook(data: DashboardStatsPayload, adminUsers?: AdminUser
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, "Отчёт");
 
-  const companyHeader = ["Тикер", "Компания", "Прогнозов"];
+  const companyHeader = ["Цена", "Компания", "Прогнозов"];
   const companyBody = (data.companyPredictCounts ?? []).map((c) => [c.ticker, c.name, c.count]);
   const wsCo = XLSX.utils.aoa_to_sheet([companyHeader, ...companyBody]);
   XLSX.utils.book_append_sheet(wb, wsCo, "По компаниям");
@@ -187,9 +188,13 @@ function pdfDrawDailyTable(doc: jsPDF, yStart: number, days: DashboardDayPoint[]
     doc.text("Прогн.", 74, hy, { align: "right" });
     doc.text("Нов.", 90, hy, { align: "right" });
     doc.text("Σ % дня", 118, hy, { align: "right" });
-    doc.text("Profit", 142, hy, { align: "right" });
+    doc.setFontSize(6.5);
+    doc.text("Результативность дня", 142, hy, { align: "right" });
+    doc.setFontSize(8);
     doc.text("Накоп. %", 170, hy, { align: "right" });
-    doc.text("Нак. prof", right - 1.5, hy, { align: "right" });
+    doc.setFontSize(6.5);
+    doc.text("Результативность накоп.", right - 1.5, hy, { align: "right" });
+    doc.setFontSize(8);
     doc.setTextColor(28, 24, 52);
     doc.setFontSize(8);
   };
@@ -247,15 +252,15 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
   doc.setFontSize(10);
   const lagPdf =
     data.bestProfitLag == null
-      ? "Самый прибыльный горизонт: —"
-      : `Самый прибыльный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Profit ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
+      ? "Самый результативный горизонт: —"
+      : `Самый результативный горизонт: ${formatLagMinutes(data.bestProfitLag.lagMinutes)}, Результативность ${data.bestProfitLag.sumProfit.toFixed(2)}, закр. ${data.bestProfitLag.closedCount}`;
   const lines = [
     `Период: ${formatDisplayYmd(data.from)} — ${formatDisplayYmd(data.to)}`,
     `Область: ${scopeLabel}`,
     `Win / Lose: ${data.win} / ${data.lose}`,
     `Winrate: ${formatPct01(data.weightedWinrate)}`,
     `Σ %: ${data.totalResultPercentSum}`,
-    `Прибыльность %: ${data.totalProfitSum}`,
+    `Результативность %: ${data.totalProfitSum}`,
     lagPdf,
     "",
   ];
@@ -271,7 +276,7 @@ async function exportPdf(data: DashboardStatsPayload, adminUsers?: AdminUserExpo
     y = 12;
   }
   doc.setFontSize(10);
-  y = pdfWriteParagraph(doc, "Прогнозы по компаниям (тикер)", 14, y, 182, 6);
+  y = pdfWriteParagraph(doc, "Прогнозы по компаниям (цены)", 14, y, 182, 6);
   y += 1;
   doc.setFontSize(8);
   for (const c of data.companyPredictCounts ?? []) {
@@ -441,7 +446,7 @@ export function DashboardClient({ isAdmin }: Props) {
                   maxLength={10}
                   value={fromDraft}
                   onChange={(e) => {
-                    const next = e.target.value;
+                    const next = formatDdMmYyyyTyping(e.target.value);
                     setFromDraft(next);
                     const parsed = parseDisplayDateToYmd(next);
                     if (parsed) {
@@ -465,7 +470,7 @@ export function DashboardClient({ isAdmin }: Props) {
                   maxLength={10}
                   value={toDraft}
                   onChange={(e) => {
-                    const next = e.target.value;
+                    const next = formatDdMmYyyyTyping(e.target.value);
                     setToDraft(next);
                     const parsed = parseDisplayDateToYmd(next);
                     if (parsed) {
@@ -555,7 +560,7 @@ export function DashboardClient({ isAdmin }: Props) {
                   note="Сумма процентного изменения цен"
                 />
                 <MetricCard
-                  title="Прибыльность %"
+                  title="Результативность %"
                   value={stats.totalProfitSum}
                   note="Положительный = прибыль Отрицательный = убыток"
                   className={
@@ -579,7 +584,6 @@ export function DashboardClient({ isAdmin }: Props) {
         </div>
       </div>
 
-      {isAdmin ? <AdminUsersPanel /> : null}
     </div>
   );
 }

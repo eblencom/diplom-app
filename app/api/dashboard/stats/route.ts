@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 import { getCurrentSession } from "@/lib/session";
 
+// GET ?from=&to=&userId= | userId=all tol'ko admin; otvet — JSON dlya DashboardCharts / eksporta
 export async function GET(request: Request) {
   const session = await getCurrentSession();
   if (!session) {

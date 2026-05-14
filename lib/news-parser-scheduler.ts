@@ -5,6 +5,8 @@ import { spawn } from "node:child_process";
 import { closeExpectingPredicts } from "@/lib/predicts-processor";
 import { getProjectRoot } from "@/lib/project-root";
 
+// fon: parser novostej, sinhron MOEX-cen, zakrytie prognozov; globalnye flagi — bez perezapuska kopij processa
+
 declare global {
   var newsParserSchedulerStarted: boolean | undefined;
   var newsParserRunning: boolean | undefined;
@@ -17,7 +19,7 @@ const PREDICTS_CHECK_INTERVAL_MS = 3 * 1000;
 
 function runNewsParser() {
   if (global.newsParserRunning) {
-    // uzhe krutitsya, ne dublem
+    // parser uzhe idet — ne puskat' vtoroy ekzemplyar
     return;
   }
 
@@ -65,7 +67,7 @@ function runNewsParser() {
 
 function runNewsPriceSync() {
   if (global.newsPriceSyncRunning) {
-    // tut toje anti dublyazh
+    // sinhron cen: tot zhe antidublikat zapuska
     return;
   }
 

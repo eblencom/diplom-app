@@ -14,6 +14,7 @@ export function AdminUsersPanel() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(true);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [busyDeleteId, setBusyDeleteId] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setError(null);
@@ -65,14 +66,44 @@ export function AdminUsersPanel() {
     }
   };
 
+  const deleteUser = async (u: AdminUserRow) => {
+    if (u.role === "admin") {
+      return;
+    }
+    const confirmed = window.confirm(
+      `Удалить учётную запись «${u.login}» (ID ${u.id})? Действие необратимо, связанные данные будут удалены.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+    setBusyDeleteId(u.id);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/users/${u.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Не удалось удалить пользователя");
+        return;
+      }
+      await load();
+    } catch {
+      setError("Сеть недоступна.");
+    } finally {
+      setBusyDeleteId(null);
+    }
+  };
+
   return (
-    <section className="mt-8 rounded-2xl border border-white/12 bg-[#0c0824]/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-6">
+    <section className="rounded-2xl border border-white/12 bg-[#0c0824]/70 p-5 shadow-[0_8px_32px_rgba(0,0,0,0.2)] sm:p-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-white">Учётные записи</h2>
           <p className="mt-1 text-sm text-white/55">
-            Просмотр пользователей, блокировка и разблокировка входа (аналитики). Администраторов
-            нельзя отключить.
+            Просмотр пользователей, блокировка и разблокировка входа (аналитики), удаление учётных
+            записей аналитиков. Администраторов нельзя отключить или удалить.
           </p>
         </div>
         <button
@@ -93,14 +124,15 @@ export function AdminUsersPanel() {
 
       {users && users.length > 0 ? (
         <div className="mt-5 overflow-x-auto rounded-xl border border-white/10">
-          <table className="w-full min-w-[520px] border-collapse text-left text-sm text-white/90">
+          <table className="w-full min-w-[680px] border-collapse text-left text-sm text-white/90">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.06] text-xs uppercase tracking-wide text-white/50">
                 <th className="px-4 py-3 font-medium">ID</th>
                 <th className="px-4 py-3 font-medium">Логин</th>
                 <th className="px-4 py-3 font-medium">Роль</th>
                 <th className="px-4 py-3 font-medium">Доступ</th>
-                <th className="px-4 py-3 font-medium">Действие</th>
+                <th className="px-4 py-3 font-medium">Блокировка</th>
+                <th className="px-4 py-3 font-medium">Удаление</th>
               </tr>
             </thead>
             <tbody>
@@ -127,7 +159,7 @@ export function AdminUsersPanel() {
                       ) : (
                         <button
                           type="button"
-                          disabled={busyId === u.id}
+                          disabled={busyId === u.id || busyDeleteId === u.id}
                           onClick={() => void toggleBlocked(u)}
                           className={`rounded-full px-3 py-1.5 text-xs font-semibold transition disabled:opacity-50 ${
                             blocked
@@ -136,6 +168,20 @@ export function AdminUsersPanel() {
                           }`}
                         >
                           {busyId === u.id ? "…" : blocked ? "Разблокировать" : "Заблокировать"}
+                        </button>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {isAdmin ? (
+                        <span className="text-xs text-white/40">—</span>
+                      ) : (
+                        <button
+                          type="button"
+                          disabled={busyId === u.id || busyDeleteId === u.id}
+                          onClick={() => void deleteUser(u)}
+                          className="rounded-full border border-red-400/45 bg-red-900/35 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:bg-red-900/55 disabled:opacity-50"
+                        >
+                          {busyDeleteId === u.id ? "…" : "Удалить"}
                         </button>
                       )}
                     </td>

@@ -33,7 +33,7 @@ export function TickerTradingViewLink({ ticker }: Props) {
         rel="noopener noreferrer"
         className="text-xs text-sky-300 underline-offset-2 hover:text-sky-200 hover:underline"
       >
-        Страница тикера на MOEX (TQBR: {clean})
+        Страница цены на MOEX (TQBR: {clean})
       </a>
     </div>
   );

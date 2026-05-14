@@ -9,7 +9,7 @@ export const PREDICT_POLL_BUFFER_MINUTES = 8;
 export const PREDICT_CLIENT_POLL_MS = 600;
 
 export function clampLagMinutes(value: number): number {
-  // na vsyakiy sluchay obrezka diapazona
+  // zaschita: chislo v predelah [MIN_LAG_MINUTES; MAX_LAG_MINUTES]
   if (!Number.isFinite(value)) {
     return DEFAULT_LAG_MINUTES;
   }

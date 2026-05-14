@@ -30,7 +30,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
     <div className={`rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 ${className}`}>
       <div className={`rounded-xl border px-4 py-3 ${profitTone}`}>
         <p className="text-sm font-semibold uppercase tracking-wide text-white/70">
-          Самый прибыльный горизонт
+          Самый результативный горизонт
         </p>
         {bestProfitLag ? (
           <>
@@ -38,7 +38,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
               {formatLagMinutes(bestProfitLag.lagMinutes)}
             </p>
             <p className="mt-1 text-base leading-snug text-white/75">
-              Прибыльность:{" "}
+              Результативность:{" "}
               <span className="font-mono text-lg font-semibold tabular-nums text-white">
                 {bestProfitLag.sumProfit.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
@@ -49,7 +49,7 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
             </p>
           </>
         ) : (
-          <p className="mt-2 text-base text-white/60">Нет закрытых с profit</p>
+          <p className="mt-2 text-base text-white/60">Нет закрытых с результативностью</p>
         )}
       </div>
       <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-white/60">
