@@ -1,7 +1,6 @@
 "use client";
 
-import { CompanyLogo } from "@/app/components/company-logo";
-import type { DashboardBestProfitLag, DashboardCompanyPredictCount } from "@/lib/dashboard-types";
+import type { DashboardBestProfitLag, DashboardCategoryPredictCount } from "@/lib/dashboard-types";
 import { formatLagMinutes } from "@/lib/format-lag-minutes";
 
 const BAR_COLORS = [
@@ -13,7 +12,7 @@ const BAR_COLORS = [
 ];
 
 type Props = {
-  items: DashboardCompanyPredictCount[];
+  items: DashboardCategoryPredictCount[];
   bestProfitLag: DashboardBestProfitLag | null;
   className?: string;
 };
@@ -23,8 +22,8 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
   const shown = items.slice(0, 10);
   const profitTone =
     bestProfitLag && bestProfitLag.sumProfit < 0
-      ? "border-rose-400/25 bg-rose-500/15 text-rose-100"
-      : "border-emerald-400/25 bg-emerald-500/15 text-emerald-100";
+      ? "border-rose-400/25 bg-rose-500/15"
+      : "border-emerald-400/25 bg-emerald-500/15";
 
   return (
     <div className={`rounded-xl border border-white/10 bg-white/[0.04] px-4 py-4 ${className}`}>
@@ -34,18 +33,21 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
         </p>
         {bestProfitLag ? (
           <>
-            <p className="mt-2 text-2xl font-semibold text-white">
+            <p className="mt-2 text-3xl font-bold tabular-nums text-white sm:text-4xl">
               {formatLagMinutes(bestProfitLag.lagMinutes)}
             </p>
             <p className="mt-1 text-base leading-snug text-white/75">
               Результативность:{" "}
-              <span className="font-mono text-lg font-semibold tabular-nums text-white">
+              <span className="font-mono text-xl font-bold tabular-nums text-white sm:text-2xl">
                 {bestProfitLag.sumProfit.toLocaleString("ru-RU", {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
                 })}
               </span>{" "}
-              прогнозов: {bestProfitLag.closedCount}
+              прогнозов:{" "}
+              <span className="font-mono text-lg font-bold tabular-nums text-white">
+                {bestProfitLag.closedCount}
+              </span>
             </p>
           </>
         ) : (
@@ -53,9 +55,9 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
         )}
       </div>
       <p className="mt-5 text-sm font-semibold uppercase tracking-wide text-white/60">
-        Чаще по компаниям
+        Чаще по категориям
       </p>
-      <p className="mt-1 text-sm leading-snug text-white/50">Все прогнозы в интервале</p>
+      <p className="mt-1 text-sm leading-snug text-white/50">За выбранный период</p>
       {shown.length === 0 ? (
         <p className="mt-3 text-base text-white/50">Нет прогнозов.</p>
       ) : (
@@ -64,24 +66,23 @@ export function DashboardCompanyPredictBars({ items, bestProfitLag, className = 
             const pct = Math.round((row.count / max) * 100);
             const grad = BAR_COLORS[idx % BAR_COLORS.length];
             return (
-              <li key={row.ticker} className="min-w-0">
+              <li key={row.slug} className="min-w-0">
                 <div className="flex items-baseline justify-between gap-2 text-base leading-snug">
-                  <span className="min-w-0 truncate font-mono font-semibold text-white">{row.ticker}</span>
-                  <span className="shrink-0 tabular-nums text-white/75">{row.count}</span>
+                  <span className="min-w-0 truncate font-semibold text-white">{row.label}</span>
+                  <span className="shrink-0 text-lg font-bold tabular-nums text-white">{row.count}</span>
                 </div>
                 <div
                   className="mt-1 h-2 overflow-hidden rounded-full bg-white/[0.07]"
-                  title={`${row.name}: ${row.count}`}
+                  title={`${row.label}: ${row.count}`}
                 >
                   <div
                     className={`h-full rounded-full bg-gradient-to-r ${grad}`}
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <p className="mt-1 flex min-w-0 items-center gap-2 text-sm text-white/55" title={row.name}>
-                  <CompanyLogo ticker={row.ticker} name={row.name} size={18} />
-                  <span className="truncate">{row.name}</span>
-                </p>
+                {row.slug !== "__none" ? (
+                  <p className="mt-1 font-mono text-xs text-white/45">{row.slug}</p>
+                ) : null}
               </li>
             );
           })}

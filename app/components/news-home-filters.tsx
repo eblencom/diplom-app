@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { CompanyLogo } from "@/app/components/company-logo";
 
 import {
@@ -10,11 +10,10 @@ import {
   type CategorySlug,
 } from "@/lib/company-categories";
 import { formatDdMmYyyyTyping, isoDateToDdMmYyyy, parseDdMmYyyyToIso, validateNewsDateParam } from "@/lib/news-date-param";
-
-type Company = { id: number; name: string; ticker: string };
+import type { NewsFilterCompany } from "@/lib/news";
 
 type Props = {
-  companies: Company[];
+  companies: NewsFilterCompany[];
   favoriteCompanyIds: number[];
   favoriteCategories: CategorySlug[];
   favoritesFilterActive: boolean;
@@ -124,9 +123,9 @@ function CompanyDropdown({
   compact,
   onChange,
 }: {
-  companies: Company[];
+  companies: NewsFilterCompany[];
   value: string;
-  selectedCompany?: Company;
+  selectedCompany?: NewsFilterCompany;
   favoriteCompanyIds: Set<number>;
   disabled: boolean;
   compact?: boolean;
@@ -386,6 +385,14 @@ export function NewsHomeFilters({
   const fromValue = searchParams.get("from") ?? "";
   const toValue = searchParams.get("to") ?? "";
 
+  const companiesForDropdown = useMemo(() => {
+    if (!categoryValue || !isCategorySlugValue(categoryValue)) {
+      return companies;
+    }
+    const slug = categoryValue as CategorySlug;
+    return companies.filter((c) => c.categorySlugs.includes(slug));
+  }, [companies, categoryValue]);
+
   const [fromInput, setFromInput] = useState(() =>
     isoDateToDdMmYyyy(validateNewsDateParam(fromValue)),
   );
@@ -461,7 +468,7 @@ export function NewsHomeFilters({
     (value: string) => {
       startTransition(() => {
         if (value !== "") {
-          pushFilteredHome(router, searchParams, { company: value, category: "" });
+          pushFilteredHome(router, searchParams, { company: value });
         } else {
           pushFilteredHome(router, searchParams, { company: "" });
         }
@@ -473,14 +480,23 @@ export function NewsHomeFilters({
   const onCategoryChange = useCallback(
     (value: string) => {
       startTransition(() => {
-        if (value !== "") {
-          pushFilteredHome(router, searchParams, { company: "", category: value });
-        } else {
+        if (value === "") {
           pushFilteredHome(router, searchParams, { category: "" });
+          return;
         }
+        const slug = value as CategorySlug;
+        const curCompany = searchParams.get("company") ?? "";
+        if (curCompany) {
+          const co = companies.find((c) => String(c.id) === curCompany);
+          if (co && !co.categorySlugs.includes(slug)) {
+            pushFilteredHome(router, searchParams, { company: "", category: value });
+            return;
+          }
+        }
+        pushFilteredHome(router, searchParams, { category: value });
       });
     },
-    [router, searchParams],
+    [router, searchParams, companies],
   );
 
   const onReset = useCallback(() => {
@@ -647,7 +663,7 @@ export function NewsHomeFilters({
           <div className="flex min-w-0 items-end gap-1.5">
             <div className="min-w-0 flex-1">
               <CompanyDropdown
-                companies={companies}
+                companies={companiesForDropdown}
                 value={companyValue}
                 selectedCompany={selectedCompany}
                 favoriteCompanyIds={favCompanySet}

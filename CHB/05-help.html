@@ -10,59 +10,66 @@
     <p class="page-title">Прототип: /help</p>
     <div class="nav-back"><a href="index.html">← Оглавление</a></div>
     <div class="frame">
-      <header class="header-bar">
-        <span class="logo">DiplomApp</span>
-        <nav class="nav-pills">
-          <span class="pill">Главная</span>
-          <span class="pill">Дашборд</span>
-          <span class="pill">Профиль</span>
-          <span class="pill pill-active">Справка</span>
-        </nav>
-        <span class="pill">Выход</span>
-      </header>
 
+      <header class="header-bar">
+        <div class="header-left">
+          <span class="logo">DiplomApp</span>
+          <a href="06-admin.html" class="pill-admin">Панель адм.</a>
+        </div>
+        <nav class="nav-pills">
+          <span class="pill">Главная</span><span class="pill">Дашборд</span><span class="pill">Профиль</span><span class="pill pill-active">Справка</span>
+        </nav>
+        <div class="row">
+          <span class="pill">Логин</span>
+          <span class="pill">Роль</span>
+          <span class="pill">Выйти</span>
+        </div>
+      </header>
       <div class="block">
         <div class="label">«Справочная система» — вступление</div>
-        <div class="rect rect-sm" style="width: 85%"></div>
+        <div class="rect rect-sm" style="width:85%"></div>
       </div>
 
       <div class="grid-2">
         <div class="block">
-          <div class="label">1) Вход</div>
-          <div class="rect rect-sm"></div>
-          <div class="rect rect-sm"></div>
-          <div class="rect rect-sm"></div>
-        </div>
-        <div class="block">
-          <div class="label">2) Главная</div>
+          <div class="label">1) Вход и регистрация</div>
           <div class="rect rect-sm"></div>
           <div class="rect rect-sm"></div>
         </div>
         <div class="block">
-          <div class="label">3) Прогнозы</div>
+          <div class="label">2) Главная — фильтры С/По, категории на карточках</div>
           <div class="rect rect-sm"></div>
           <div class="rect rect-sm"></div>
         </div>
         <div class="block">
-          <div class="label">4) Дашборд</div>
+          <div class="label">3) Прогнозы и избранное</div>
+          <div class="rect rect-sm"></div>
+        </div>
+        <div class="block">
+          <div class="label">4) Дашборд — экспорт, категории, активность (админ)</div>
           <div class="rect rect-sm"></div>
           <div class="rect rect-sm"></div>
+        </div>
+        <div class="block">
+          <div class="label">4.1) Метрики дашборда</div>
+          <div class="rect rect-sm">Win/Lose, винрейт, настроение, результативность</div>
+          <div class="rect rect-sm">Чаще по категориям, сводка по компаниям</div>
         </div>
         <div class="block">
           <div class="label">5) Профиль и Telegram</div>
           <div class="rect rect-sm"></div>
-          <div class="rect rect-sm"></div>
         </div>
         <div class="block">
-          <div class="label">6) Администратор</div>
-          <div class="rect rect-sm"></div>
-          <div class="rect rect-sm"></div>
+          <div class="label">6) Администратор — отдельная /admin</div>
+          <div class="rect rect-sm">Панель: пользователи, роли, блокировка, удаление</div>
+          <div class="rect rect-sm">Ссылка в шапке «Панель адм.»</div>
         </div>
       </div>
 
-      <div class="footer-note">
-        <strong>Подсказка</strong> — отдельная плашка внизу (как в приложении).
+      <div class="hint-cyan">
+        <strong>Подсказка</strong> — краткая справка по текущему разделу (как в приложении).
       </div>
+
     </div>
   </body>
 </html>

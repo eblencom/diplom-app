@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS users (
   tg_price_last_digest_at TIMESTAMP NULL,
   tg_news_last_digest_at TIMESTAMP NULL,
   tg_news_interval_minutes INT NOT NULL DEFAULT 10
-    CHECK (tg_news_interval_minutes >= 1 AND tg_news_interval_minutes <= 1440)
+    CHECK (tg_news_interval_minutes >= 1 AND tg_news_interval_minutes <= 1440),
+  registered_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS companies (
@@ -20,7 +21,8 @@ CREATE TABLE IF NOT EXISTS companies (
   ticker VARCHAR(32) NOT NULL UNIQUE,
   news_link TEXT,
   price_link TEXT,
-  prices_path TEXT
+  prices_path TEXT,
+  category_slugs TEXT[] NOT NULL DEFAULT '{}'::text[]
 );
 
 CREATE TABLE IF NOT EXISTS news (
@@ -72,32 +74,26 @@ CREATE INDEX IF NOT EXISTS idx_predicts_expect_prices
 ON predicts (id)
 WHERE status = 'expect' AND price_before IS NOT NULL AND price_after IS NOT NULL;
 
-CREATE TABLE IF NOT EXISTS user_ticker_alerts (
+CREATE TABLE IF NOT EXISTS user_preference_items (
   user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  kind VARCHAR(32) NOT NULL
+    CHECK (kind IN ('ticker_alert', 'news_fav_company', 'news_fav_category')),
+  company_id BIGINT NULL REFERENCES companies(id) ON DELETE CASCADE,
+  category_slug VARCHAR(32) NULL,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (user_id, company_id)
+  CONSTRAINT chk_user_preference_items_shape CHECK (
+    (kind IN ('ticker_alert', 'news_fav_company') AND company_id IS NOT NULL AND category_slug IS NULL)
+    OR (kind = 'news_fav_category' AND category_slug IS NOT NULL AND company_id IS NULL)
+  )
 );
 
-CREATE INDEX IF NOT EXISTS idx_user_ticker_alerts_user
-ON user_ticker_alerts (user_id);
+CREATE UNIQUE INDEX IF NOT EXISTS u_pref_user_kind_company
+ON user_preference_items (user_id, kind, company_id)
+WHERE company_id IS NOT NULL;
 
-CREATE TABLE IF NOT EXISTS user_favorite_news_companies (
-  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  company_id BIGINT NOT NULL REFERENCES companies(id) ON DELETE CASCADE,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (user_id, company_id)
-);
+CREATE UNIQUE INDEX IF NOT EXISTS u_pref_user_kind_category_slug
+ON user_preference_items (user_id, kind, category_slug)
+WHERE kind = 'news_fav_category';
 
-CREATE INDEX IF NOT EXISTS idx_user_fav_news_companies_user
-ON user_favorite_news_companies (user_id);
-
-CREATE TABLE IF NOT EXISTS user_favorite_news_categories (
-  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  category_slug VARCHAR(32) NOT NULL,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-  PRIMARY KEY (user_id, category_slug)
-);
-
-CREATE INDEX IF NOT EXISTS idx_user_fav_news_categories_user
-ON user_favorite_news_categories (user_id);
+CREATE INDEX IF NOT EXISTS idx_user_preference_items_user
+ON user_preference_items (user_id);

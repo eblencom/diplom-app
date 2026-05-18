@@ -2,8 +2,7 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { CompanyLogo } from "@/app/components/company-logo";
-
-type Company = { id: number; name: string; ticker: string };
+import type { NewsFilterCompany } from "@/lib/news";
 
 type Props = {
   siteLogin: string;
@@ -11,7 +10,7 @@ type Props = {
   initialTgChatId: number | null;
   initialAlertCompanyIds: number[];
   initialNewsIntervalMinutes: number;
-  companies: Company[];
+  companies: NewsFilterCompany[];
 };
 
 function botLink() {

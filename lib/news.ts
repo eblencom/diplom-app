@@ -1,11 +1,7 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
-import {
-  isCategorySlug,
-  tickersMatchingCategory,
-  type CategorySlug,
-} from "@/lib/company-categories";
+import { isCategorySlug, type CategorySlug } from "@/lib/company-categories";
 import { getFavoritesWhereSql } from "@/lib/news-favorites";
 import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
@@ -88,11 +84,32 @@ function appendDatetimeDateFilters(
   return { clause: newClause, whereParams: params, nextIndex: idx };
 }
 
-export type CompanyFilterRow = {
+type CompanyFilterRow = {
   id: number | string;
   name: string;
   ticker: string;
+  category_slugs: string[] | null;
 };
+
+export type NewsFilterCompany = {
+  id: number;
+  name: string;
+  ticker: string;
+  categorySlugs: CategorySlug[];
+};
+
+function parseCompanyCategorySlugs(raw: string[] | null | undefined): CategorySlug[] {
+  if (!raw?.length) {
+    return [];
+  }
+  const out: CategorySlug[] = [];
+  for (const s of raw) {
+    if (isCategorySlug(s)) {
+      out.push(s);
+    }
+  }
+  return out;
+}
 
 export type NewsPreviewPublic = {
   id: number;
@@ -136,26 +153,19 @@ function buildNewsWhereClause(filters?: NewsListFilters): {
   }
 
   if (filters?.category != null && isCategorySlug(filters.category)) {
-    const tickers = tickersMatchingCategory(filters.category);
-    if (tickers.length === 0) {
-      parts.push("FALSE");
-    } else {
-      parts.push(`c.ticker = ANY($${idx}::text[])`);
-      params.push(tickers);
-      idx += 1;
-    }
+    parts.push(`$${idx}::text = ANY(c.category_slugs)`);
+    params.push(filters.category);
+    idx += 1;
   }
 
   const clause = parts.length > 0 ? `WHERE ${parts.join(" AND ")}` : "";
   return { clause, params, nextIndex: idx };
 }
 
-export async function getCompaniesForNewsFilter(): Promise<
-  { id: number; name: string; ticker: string }[]
-> {
+export async function getCompaniesForNewsFilter(): Promise<NewsFilterCompany[]> {
   const result = await sql<CompanyFilterRow>(
     `
-      SELECT id, name, ticker
+      SELECT id, name, ticker, category_slugs
       FROM companies
       ORDER BY name ASC
     `,
@@ -164,6 +174,7 @@ export async function getCompaniesForNewsFilter(): Promise<
     id: normalizeId(row.id),
     name: row.name,
     ticker: row.ticker,
+    categorySlugs: parseCompanyCategorySlugs(row.category_slugs),
   }));
 }
 

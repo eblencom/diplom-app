@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getDashboardStats } from "@/lib/dashboard-stats";
 import { getCurrentSession } from "@/lib/session";
 
-// GET ?from=&to=&userId= | userId=all tol'ko admin; otvet — JSON dlya DashboardCharts / eksporta
+// GET ?from=&to=&userId=&adminActivityDays= — JSON для дашборда
 export async function GET(request: Request) {
   const session = await getCurrentSession();
   if (!session) {
@@ -23,12 +23,19 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "bad_user" }, { status: 400 });
   }
 
+  const activityRaw = Number(searchParams.get("adminActivityDays"));
+  const adminActivityWindowDays =
+    session.role === "admin"
+      ? Math.min(30, Math.max(1, Number.isFinite(activityRaw) ? Math.round(activityRaw) : 14))
+      : undefined;
+
   const result = await getDashboardStats({
     userId: session.userId,
     isAdmin: session.role === "admin",
     selectedUserId,
     from,
     to,
+    ...(session.role === "admin" ? { adminActivityWindowDays } : {}),
   });
 
   if (!result.ok) {

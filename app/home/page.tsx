@@ -121,6 +121,22 @@ export default async function HomePage({ searchParams }: HomePageProps) {
     ...(dateTo ? { dateTo } : {}),
   };
 
+  const companies = await getCompaniesForNewsFilter();
+
+  if (!favoritesOnly && companyId != null && categoryFilter != null) {
+    const co = companies.find((c) => c.id === companyId);
+    if (co && !co.categorySlugs.includes(categoryFilter)) {
+      redirect(
+        `/home${buildHomeNewsQuery({
+          page: Math.max(1, currentPage),
+          category: categoryFilter,
+          dateFrom,
+          dateTo,
+        })}`,
+      );
+    }
+  }
+
   const listFilters = favoritesOnly
     ? Object.keys(datePart).length > 0
       ? { favoritesOnly: true as const, ...datePart }
@@ -133,11 +149,9 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         }
       : undefined;
 
-  const [newsPage, companies, winrateInitial, favoriteCompanyIds, favoriteCategories] =
-    await Promise.all([
-      // parallel: lenta, kompanii, vinrejt, izbrannoe — odin zahod k BD, menshe zaderzhki
+  const [newsPage, winrateInitial, favoriteCompanyIds, favoriteCategories] = await Promise.all([
+      // parallel: lenta, vinrejt, izbrannoe — kompanii uzhe zagruzheny
       getNewsPage(currentPage, 10, session.userId, listFilters),
-      getCompaniesForNewsFilter(),
       getUserWinrateStats(session.userId),
       getUserNewsFavoriteCompanyIds(session.userId),
       getUserNewsFavoriteCategorySlugs(session.userId),

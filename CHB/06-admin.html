@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CHB 06 — Админ</title>
+    <link rel="stylesheet" href="prototype.css" />
+  </head>
+  <body>
+    <p class="page-title">Прототип: /admin</p>
+    <div class="nav-back"><a href="index.html">← Оглавление</a></div>
+    <div class="frame">
+
+      <header class="header-bar">
+        <div class="header-left">
+          <span class="logo">DiplomApp</span>
+          <span class="pill-admin pill-admin-active">Панель адм.</span>
+        </div>
+        <nav class="nav-pills">
+          <span class="pill">Главная</span><span class="pill">Дашборд</span><span class="pill">Профиль</span><span class="pill">Справка</span>
+        </nav>
+        <div class="row">
+          <span class="pill">Логин</span>
+          <span class="pill">admin</span>
+          <span class="pill">Выйти</span>
+        </div>
+      </header>
+      <div class="block">
+        <div class="label">Панель администратора</div>
+        <div class="rect rect-sm" style="width:70%"></div>
+      </div>
+
+      <div class="block">
+        <div class="label">Фильтры: дата регистрации с / по · обновить · сброс</div>
+        <div class="row">
+          <div class="rect" style="width:110px;height:28px;margin:0"></div>
+          <div class="rect" style="width:110px;height:28px;margin:0"></div>
+          <span class="pill">Обновить</span>
+          <span class="pill pill-outline">Сбросить даты</span>
+        </div>
+      </div>
+
+      <div class="table-wrap">
+        <table class="proto-table">
+          <thead>
+            <tr>
+              <th>ID</th><th>Логин</th><th>Регистрация</th><th>Роль</th>
+              <th>Доступ</th><th>Блокировка</th><th>Удаление</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>user_demo</td><td>01.01.2026</td><td>user</td><td>□</td><td>□</td><td>кнопка</td></tr>
+            <tr><td>2</td><td>admin</td><td>15.12.2025</td><td>admin</td><td>□</td><td>□</td><td>кнопка</td></tr>
+            <tr><td>3</td><td>blocked_user</td><td>20.03.2026</td><td>user</td><td>□</td><td>☑</td><td>кнопка</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+    </div>
+  </body>
+</html>

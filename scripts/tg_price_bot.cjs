@@ -143,7 +143,7 @@ async function sendPriceDigest() {
   const { rows } = await pool.query(`
     SELECT u.id, u.tg_chat_id, c.ticker
     FROM users u
-    INNER JOIN user_ticker_alerts uta ON uta.user_id = u.id
+    INNER JOIN user_preference_items uta ON uta.user_id = u.id AND uta.kind = 'ticker_alert'
     INNER JOIN companies c ON c.id = uta.company_id
     WHERE u.tg_chat_id IS NOT NULL
       AND (
@@ -237,7 +237,7 @@ async function sendNewsDigest() {
     SELECT u.id, u.tg_chat_id, u.tg_news_last_digest_at, u.tg_news_interval_minutes
     FROM users u
     WHERE u.tg_chat_id IS NOT NULL
-      AND EXISTS (SELECT 1 FROM user_ticker_alerts uta WHERE uta.user_id = u.id)
+      AND EXISTS (SELECT 1 FROM user_preference_items uta WHERE uta.user_id = u.id AND uta.kind = 'ticker_alert')
       AND (
         u.tg_news_last_digest_at IS NULL
         OR u.tg_news_last_digest_at <= NOW() - (u.tg_news_interval_minutes * INTERVAL '1 minute')
@@ -255,7 +255,7 @@ async function sendNewsDigest() {
     );
 
     const { rows: idRows } = await pool.query(
-      `SELECT company_id FROM user_ticker_alerts WHERE user_id = $1`,
+      `SELECT company_id FROM user_preference_items WHERE user_id = $1 AND kind = 'ticker_alert'`,
       [u.id],
     );
     const companyIds = idRows.map((r) => Number(r.company_id)).filter(Number.isFinite);

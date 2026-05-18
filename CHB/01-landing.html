@@ -9,27 +9,46 @@
   <body>
     <p class="page-title">Прототип: / (гость — лендинг, вход, регистрация)</p>
     <div class="nav-back"><a href="index.html">← Оглавление</a></div>
+
     <div class="frame">
       <div class="block block-muted">
-        <div class="label">Декоративный фон (в макете условно)</div>
-        <div class="rect rect-lg" style="opacity: 0.3"></div>
+        <div class="label">Декоративный фон (градиент + обои)</div>
+        <div class="rect rect-lg" style="opacity: 0.35; min-height: 48px"></div>
       </div>
 
-      <div class="block" style="margin-top: 12px">
-        <div class="label">Герой-блок (заголовок, УТП)</div>
-        <div class="rect" style="width: 70%"></div>
-        <div class="rect rect-sm" style="width: 90%"></div>
-        <div class="rect rect-sm" style="width: 45%"></div>
+      <div class="hero-split" style="margin-top: 12px">
+        <div>
+          <div class="label">Герой: бренд, УТП, эмитенты, источник</div>
+          <div class="rect" style="width: 55%"></div>
+          <div class="rect rect-lg" style="width: 85%"></div>
+          <div class="rect rect-sm" style="width: 70%"></div>
+          <div class="row" style="margin-top: 8px">
+            <span class="pill">N эмитентов</span>
+            <span class="pill">Investing.com</span>
+          </div>
+          <div class="label" style="margin-top: 12px; border: none">Возможности (чипы)</div>
+          <div class="row">
+            <span class="pill">Новости</span>
+            <span class="pill">Прогнозы</span>
+            <span class="pill">Дашборд</span>
+          </div>
+        </div>
+        <div class="block" style="margin: 0">
+          <div class="label">Превью интерфейса (скрин)</div>
+          <div class="block block-inset" style="min-height: 160px; margin: 0; display: flex; align-items: center; justify-content: center">
+            Preview.png
+          </div>
+        </div>
       </div>
 
       <div class="block" id="auth" style="margin-top: 12px">
-        <div class="label">Формы входа и регистрации</div>
+        <div class="label">Формы входа и регистрации (AuthForm)</div>
         <div class="grid-2">
           <div class="block">
             <div class="label">Вход</div>
             <div class="rect rect-sm"></div>
             <div class="rect rect-sm"></div>
-            <div class="rect" style="width: 40%; margin-top: 8px"></div>
+            <div class="rect" style="width: 45%; margin-top: 8px"></div>
           </div>
           <div class="block">
             <div class="label">Регистрация</div>
@@ -42,41 +61,31 @@
       </div>
 
       <div class="block" style="margin-top: 12px">
-        <div class="label">Возможности сервиса (чипы)</div>
-        <div class="row">
-          <span class="pill">…</span>
-          <span class="pill">…</span>
-          <span class="pill">…</span>
-          <span class="pill">…</span>
-        </div>
-      </div>
-
-      <div class="block" style="margin-top: 12px">
-        <div class="label">Эмитенты — сетка карточек</div>
+        <div class="label">Эмитенты — сетка карточек (якорь #issuers)</div>
         <div class="grid-4">
-          <div class="block" style="min-height: 48px; margin: 0"></div>
-          <div class="block" style="min-height: 48px; margin: 0"></div>
-          <div class="block" style="min-height: 48px; margin: 0"></div>
-          <div class="block" style="min-height: 48px; margin: 0"></div>
+          <div class="block" style="min-height: 52px; margin: 0">лого + тикер</div>
+          <div class="block" style="min-height: 52px; margin: 0"></div>
+          <div class="block" style="min-height: 52px; margin: 0"></div>
+          <div class="block" style="min-height: 52px; margin: 0"></div>
         </div>
       </div>
 
       <div class="block" style="margin-top: 12px">
         <div class="label">Превью новостей для гостя</div>
-        <div class="article-card" style="margin-bottom: 6px">
-          <div class="rect rect-sm" style="width: 30%"></div>
+        <div class="article-card">
+          <div class="rect rect-sm" style="width: 35%"></div>
           <div class="rect"></div>
           <div class="rect rect-sm" style="width: 80%"></div>
         </div>
         <div class="article-card" style="margin-bottom: 0">
-          <div class="rect rect-sm" style="width: 35%"></div>
+          <div class="rect rect-sm" style="width: 40%"></div>
           <div class="rect"></div>
         </div>
       </div>
 
       <div class="block block-muted" style="margin-top: 12px; text-align: center">
         <div class="label">Призыв к регистрации</div>
-        <div class="rect" style="width: 200px; margin: 8px auto"></div>
+        <div class="rect" style="width: 220px; margin: 8px auto"></div>
       </div>
     </div>
   </body>

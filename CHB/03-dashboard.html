@@ -10,99 +10,110 @@
     <p class="page-title">Прототип: /dashboard</p>
     <div class="nav-back"><a href="index.html">← Оглавление</a></div>
     <div class="frame">
-      <header class="header-bar">
-        <span class="logo">DiplomApp</span>
-        <nav class="nav-pills">
-          <span class="pill">Главная</span>
-          <span class="pill pill-active">Дашборд</span>
-          <span class="pill">Профиль</span>
-          <span class="pill">Справка</span>
-        </nav>
-        <span class="pill">логин · роль</span>
-      </header>
 
+      <header class="header-bar">
+        <div class="header-left">
+          <span class="logo">DiplomApp</span>
+          <a href="06-admin.html" class="pill-admin">Панель адм.</a>
+        </div>
+        <nav class="nav-pills">
+          <span class="pill">Главная</span><span class="pill pill-active">Дашборд</span><span class="pill">Профиль</span><span class="pill">Справка</span>
+        </nav>
+        <div class="row">
+          <span class="pill">Логин</span>
+          <span class="pill">Роль</span>
+          <span class="pill">Выйти</span>
+        </div>
+      </header>
       <div class="block">
         <div class="label">Заголовок «Дашборд»</div>
       </div>
 
       <div class="block">
-        <div class="label">Панель: даты, обновление, экспорт, (админ) пользователь</div>
-        <div class="row" style="align-items: center">
-          <div class="rect" style="width: 120px; height: 28px; margin: 0"></div>
-          <div class="rect" style="width: 120px; height: 28px; margin: 0"></div>
+        <div class="label">Панель: интервал · даты · (админ) пользователь · Excel / PDF</div>
+        <div class="row" style="align-items:center">
+          <span class="pill">7д</span><span class="pill pill-active">30д</span><span class="pill">90д</span>
+          <div class="rect" style="width:100px;height:28px;margin:0"></div>
+          <div class="rect" style="width:100px;height:28px;margin:0"></div>
           <span class="pill">Обновить</span>
-          <div class="block" style="margin: 0; flex: 1; min-width: 180px">
-            <div class="rect rect-sm" style="width: 100%"></div>
-            <div class="label" style="border: none; font-size: 9px; margin: 4px 0 0">
-              список пользователя (администратор)
+          <div class="block" style="margin:0;flex:1;min-width:160px">
+            <div class="rect rect-sm" style="width:100%"></div>
+            <div class="label" style="border:none;font-size:9px;margin:4px 0 0">Пользователь (только админ)</div>
+          </div>
+          <span class="pill">Excel</span><span class="pill">PDF</span>
+        </div>
+      </div>
+
+      <div class="dashboard-layout">
+        <div class="col">
+          <div class="block">
+            <div class="label">Win / Lose (donut)</div>
+            <div class="donut" style="width:80px;height:80px;font-size:10px">W/L</div>
+          </div>
+          <div class="block">
+            <div class="label">Чаще по категориям</div>
+            <div class="chart-box" style="min-height:72px">
+              <div class="bar" style="height:70%"></div>
+              <div class="bar" style="height:45%"></div>
+              <div class="bar" style="height:55%"></div>
             </div>
           </div>
-          <span class="pill">Excel</span>
-          <span class="pill">PDF</span>
+          <div class="grid-2">
+            <div class="block" style="margin:0">
+              <div class="label">Настроение</div>
+              <div class="rect rect-sm"></div>
+            </div>
+            <div class="block" style="margin:0">
+              <div class="label">Результативность</div>
+              <div class="rect rect-sm"></div>
+            </div>
+          </div>
         </div>
-      </div>
 
-      <div class="grid-2" style="margin-bottom: 8px">
-        <div class="block">
-          <div class="label">Win / Lose, средний винрейт</div>
-          <div class="row">
-            <div class="block" style="flex: 1; margin: 0; min-height: 80px">диаграмма</div>
-            <div class="col">
+        <div class="col">
+          <div class="block">
+            <div class="label">Визуальная сводка</div>
+            <div class="grid-2">
+              <div class="rect rect-sm"></div>
               <div class="rect rect-sm"></div>
               <div class="rect rect-sm"></div>
               <div class="rect rect-sm"></div>
             </div>
           </div>
-        </div>
-        <div class="block">
-          <div class="label">Самый результативный горизонт</div>
-          <div class="rect"></div>
-          <div class="rect rect-sm"></div>
-        </div>
-      </div>
-
-      <div class="block">
-        <div class="label">Столбчатые графики по дням</div>
-        <div class="grid-2">
-          <div class="chart-box" style="min-height: 120px">
-            <div class="bar" style="height: 30%"></div>
-            <div class="bar" style="height: 55%"></div>
-            <div class="bar" style="height: 40%"></div>
-            <div class="bar" style="height: 70%"></div>
-            <div class="bar" style="height: 45%"></div>
+          <div class="block">
+            <div class="label">Новости и прогнозы по компаниям (столбцы)</div>
+            <div class="grid-2">
+              <div class="chart-box" style="min-height:100px">
+                <div class="bar" style="height:40%"></div>
+                <div class="bar" style="height:65%"></div>
+                <div class="bar" style="height:30%"></div>
+              </div>
+              <div class="chart-box" style="min-height:100px">
+                <div class="bar" style="height:50%"></div>
+                <div class="bar" style="height:35%"></div>
+                <div class="bar" style="height:60%"></div>
+              </div>
+            </div>
           </div>
-          <div class="chart-box" style="min-height: 120px">
-            <div class="bar" style="height: 50%"></div>
-            <div class="bar" style="height: 50%"></div>
-            <div class="bar" style="height: 35%"></div>
-            <div class="bar" style="height: 60%"></div>
-            <div class="bar" style="height: 45%"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="block">
-        <div class="label">Накопительный график + визуальная сводка</div>
-        <div class="grid-2">
-          <div class="block" style="margin: 0; min-height: 140px">линейный график</div>
-          <div class="block" style="margin: 0">
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
+          <div class="block block-muted">
+            <div class="label">Активность пользователей (только админ) · N дней</div>
+            <div class="row" style="margin-bottom:6px">
+              <span class="pill pill-active">7</span><span class="pill">14</span><span class="pill">30</span>
+            </div>
+            <div class="chart-box chart-combo" style="min-height:120px">
+              <div class="combo-inner">
+                <div class="bar" style="height:35%"></div>
+                <div class="bar" style="height:55%"></div>
+                <div class="bar" style="height:40%"></div>
+                <div class="bar" style="height:70%"></div>
+                <div class="bar" style="height:45%"></div>
+              </div>
+              <div class="label" style="border:none;font-size:9px;margin:4px 0 0">столбцы + линия активности</div>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="block">
-        <div class="label">Частота прогнозов по компаниям</div>
-        <div class="rect" style="height: 64px"></div>
-      </div>
-
-      <div class="block block-muted">
-        <div class="label">Только администратор — учётные записи</div>
-        <div class="rect" style="height: 80px"></div>
-      </div>
     </div>
   </body>
 </html>

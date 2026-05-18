@@ -1,9 +1,9 @@
 import Image from "next/image";
-import type { NewsPreviewPublic } from "@/lib/news";
+import type { NewsFilterCompany, NewsPreviewPublic } from "@/lib/news";
 import { CompanyLogo } from "@/app/components/company-logo";
 import { formatDisplayDateTime } from "@/lib/display-date";
 
-type Company = { id: number; name: string; ticker: string };
+type Company = NewsFilterCompany;
 
 const CAPABILITY_CARDS = [
   {

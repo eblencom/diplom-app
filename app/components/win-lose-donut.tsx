@@ -25,20 +25,20 @@ export function WinLoseDonut({ win, lose, className }: WinLoseDonutProps) {
           aria-hidden
         />
         <div className="absolute inset-[22%] flex flex-col items-center justify-center rounded-full bg-[#0a061f] text-center">
-          <span className="text-xl font-semibold tabular-nums text-white sm:text-2xl">
+          <span className="text-2xl font-bold tabular-nums text-white sm:text-3xl">
             {total > 0 ? `${Math.round((win / total) * 100)}%` : "—"}
           </span>
-          <span className="text-xs text-white/50">win</span>
+          <span className="text-sm text-white/60">win</span>
         </div>
       </div>
-      <div className="mt-4 flex justify-center gap-5 text-sm">
-        <span className="inline-flex items-center gap-2 text-emerald-200/95">
+      <div className="mt-4 flex justify-center gap-6 text-base font-semibold">
+        <span className="inline-flex items-center gap-2 text-white">
           <span className="size-2.5 shrink-0 rounded-full bg-emerald-400" aria-hidden />
-          Win {win}
+          Win <span className="tabular-nums">{win}</span>
         </span>
-        <span className="inline-flex items-center gap-2 text-rose-200/95">
+        <span className="inline-flex items-center gap-2 text-white">
           <span className="size-2.5 shrink-0 rounded-full bg-rose-500" aria-hidden />
-          Lose {lose}
+          Lose <span className="tabular-nums">{lose}</span>
         </span>
       </div>
     </div>

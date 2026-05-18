@@ -10,56 +10,58 @@
     <p class="page-title">Прототип: /profile</p>
     <div class="nav-back"><a href="index.html">← Оглавление</a></div>
     <div class="frame">
-      <header class="header-bar">
-        <span class="logo">DiplomApp</span>
-        <nav class="nav-pills">
-          <span class="pill">Главная</span>
-          <span class="pill">Дашборд</span>
-          <span class="pill pill-active">Профиль</span>
-          <span class="pill">Справка</span>
-        </nav>
-        <span class="pill">Выход</span>
-      </header>
 
+      <header class="header-bar">
+        <div class="header-left">
+          <span class="logo">DiplomApp</span>
+          <a href="06-admin.html" class="pill-admin">Панель адм.</a>
+        </div>
+        <nav class="nav-pills">
+          <span class="pill">Главная</span><span class="pill">Дашборд</span><span class="pill pill-active">Профиль</span><span class="pill">Справка</span>
+        </nav>
+        <div class="row">
+          <span class="pill">Логин</span>
+          <span class="pill">Роль</span>
+          <span class="pill">Выйти</span>
+        </div>
+      </header>
       <div class="block">
         <div class="label">Заголовок «Профиль»</div>
       </div>
 
       <div class="grid-2">
         <div class="block">
-          <div class="label">Telegram: логин бота, сохранение</div>
+          <div class="label">Telegram: @бот, сохранение</div>
           <div class="rect rect-sm"></div>
-          <div class="rect" style="width: 50%; margin-top: 8px"></div>
+          <div class="rect" style="width:50%;margin-top:8px"></div>
         </div>
         <div class="block">
-          <div class="label">Уведомления по ценам, интервал новостей</div>
-          <div class="row" style="flex-direction: column; gap: 4px">
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
-            <div class="rect" style="width: 40%; margin-top: 4px"></div>
-          </div>
+          <div class="label">Уведомления: цены, интервал новостей</div>
+          <div class="rect rect-sm"></div>
+          <div class="rect rect-sm"></div>
+          <div class="rect" style="width:40%;margin-top:4px"></div>
         </div>
       </div>
 
       <div class="block">
         <div class="label">Смена логина</div>
-        <div class="rect rect-sm" style="width: 60%"></div>
-        <div class="rect" style="width: 100px; margin-top: 6px"></div>
+        <div class="rect rect-sm" style="width:60%"></div>
+        <div class="rect" style="width:100px;margin-top:6px"></div>
       </div>
 
       <div class="block">
         <div class="label">Смена пароля</div>
         <div class="rect rect-sm"></div>
         <div class="rect rect-sm"></div>
-        <div class="rect" style="width: 100px; margin-top: 6px"></div>
+        <div class="rect" style="width:100px;margin-top:6px"></div>
       </div>
 
       <div class="block block-muted">
         <div class="label">Удаление аккаунта (подтверждение паролем)</div>
-        <div class="rect rect-sm" style="width: 50%"></div>
-        <div class="rect" style="width: 120px; margin-top: 8px; background: #000"></div>
+        <div class="rect rect-sm" style="width:50%"></div>
+        <div class="rect" style="width:120px;margin-top:8px;background:#000"></div>
       </div>
+
     </div>
   </body>
 </html>

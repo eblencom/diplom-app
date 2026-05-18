@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/app/components/app-header";
 import { AdminUsersPanel } from "@/app/components/admin-users-panel";
@@ -26,7 +27,11 @@ export default async function AdminPage() {
             Учётные записи: блокировка, разблокировка и удаление аналитиков.
           </p>
           <div className="mt-6 sm:mt-8">
-            <AdminUsersPanel />
+            <Suspense
+              fallback={<div className="h-48 animate-pulse rounded-2xl bg-white/5" aria-hidden />}
+            >
+              <AdminUsersPanel />
+            </Suspense>
           </div>
         </div>
       </section>

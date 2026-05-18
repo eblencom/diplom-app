@@ -14,8 +14,9 @@ import {
 import { NewsHomeFilters } from "@/app/components/news-home-filters";
 import { TickerTape } from "@/app/components/ticker-tape";
 import type { CategorySlug } from "@/lib/company-categories";
+import type { NewsFilterCompany } from "@/lib/news";
 
-type Company = { id: number; name: string; ticker: string };
+type Company = NewsFilterCompany;
 
 type Props = {
   companies: Company[];

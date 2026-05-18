@@ -10,93 +10,96 @@
     <p class="page-title">Прототип: /home</p>
     <div class="nav-back"><a href="index.html">← Оглавление</a></div>
     <div class="frame">
+
       <header class="header-bar">
-        <span class="logo">DiplomApp</span>
+        <div class="header-left">
+          <span class="logo">DiplomApp</span>
+          <a href="06-admin.html" class="pill-admin">Панель адм.</a>
+        </div>
         <nav class="nav-pills">
-          <span class="pill pill-active">Главная</span>
-          <span class="pill">Дашборд</span>
-          <span class="pill">Профиль</span>
-          <span class="pill">Справка</span>
+          <span class="pill pill-active">Главная</span><span class="pill">Дашборд</span><span class="pill">Профиль</span><span class="pill">Справка</span>
         </nav>
-        <span class="pill">Логин · Выход</span>
-      </header>
-
-      <div class="ticker-strip">
-        <div class="label" style="border: none; margin: 0">Бегущая строка цен</div>
-      </div>
-
-      <div class="block">
-        <div class="label">Заголовок раздела</div>
-        <div class="rect" style="width: 60%"></div>
-      </div>
-
-      <div class="block">
-        <div class="label">Фильтры: компания, категория, избранное</div>
         <div class="row">
-          <div class="block" style="flex: 1; margin: 0; min-width: 140px">
+          <span class="pill">Логин</span>
+          <span class="pill">Роль</span>
+          <span class="pill">Выйти</span>
+        </div>
+      </header>
+      <div class="ticker-strip">
+        <div class="label" style="border: none; margin: 0">Бегущая строка котировок</div>
+      </div>
+
+      <div class="block">
+        <div class="label">Заголовок «Лента новостей»</div>
+        <div class="rect" style="width: 55%"></div>
+      </div>
+
+      <div class="block">
+        <div class="label">Фильтры (sticky): компания · категория · даты С / По · избранное</div>
+        <div class="row">
+          <div class="block" style="flex:1;margin:0;min-width:100px">
             <div class="rect rect-sm"></div>
+            <div class="label" style="border:none;font-size:9px;margin:4px 0 0">Компания</div>
           </div>
-          <div class="block" style="flex: 1; margin: 0; min-width: 140px">
+          <div class="block" style="flex:1;margin:0;min-width:100px">
             <div class="rect rect-sm"></div>
+            <div class="label" style="border:none;font-size:9px;margin:4px 0 0">Категория</div>
           </div>
-          <span class="pill">☆ Избранное</span>
+          <div class="block" style="flex:0;margin:0;min-width:72px">
+            <div class="rect rect-sm"></div>
+            <div class="label" style="border:none;font-size:9px;margin:4px 0 0">С</div>
+          </div>
+          <div class="block" style="flex:0;margin:0;min-width:72px">
+            <div class="rect rect-sm"></div>
+            <div class="label" style="border:none;font-size:9px;margin:4px 0 0">По</div>
+          </div>
+          <span class="pill pill-outline">☆ Только избранное</span>
         </div>
       </div>
 
       <div class="row" style="align-items: stretch">
         <div class="col" style="flex: 1; min-width: 280px">
-          <div class="article-card">
+          <div class="article-card article-good">
             <div class="row" style="margin-bottom: 8px">
-              <div class="block" style="width: 40px; height: 40px; margin: 0; padding: 0"></div>
-              <div style="flex: 1">
-                <div class="rect rect-sm" style="width: 50%"></div>
-                <div class="rect rect-sm" style="width: 30%"></div>
+              <div class="block" style="width:40px;height:40px;margin:0;padding:0"></div>
+              <div style="flex:1">
+                <div class="rect rect-sm" style="width:55%"></div>
+                <div class="rect rect-sm" style="width:35%"></div>
               </div>
             </div>
-            <div class="label">Карточка новости + блок прогнозов</div>
+            <span class="tag">категория-1</span><span class="tag">категория-2</span>
+            <div class="label" style="margin-top:8px">Карточка: текст новости + панель прогноза</div>
             <div class="rect"></div>
-            <div class="rect rect-sm"></div>
-            <div class="grid-2" style="margin-top: 8px">
-              <div class="block" style="margin: 0">Цена до / виджет</div>
-              <div class="block" style="margin: 0">Ссылка на график</div>
+            <div class="grid-2" style="margin-top:8px">
+              <div class="block" style="margin:0">Цена до события / виджет</div>
+              <div class="block" style="margin:0">Ссылка TradingView</div>
             </div>
-            <div class="block block-muted" style="margin-top: 8px; margin-bottom: 0">Новый прогноз</div>
+            <div class="block block-muted" style="margin-top:8px;margin-bottom:0">Форма нового прогноза</div>
           </div>
 
           <div class="article-card">
-            <div class="rect rect-sm" style="width: 40%"></div>
+            <span class="tag">рынок</span>
+            <div class="rect rect-sm" style="width:40%;margin-top:6px"></div>
             <div class="rect"></div>
-            <div class="rect rect-sm" style="width: 75%"></div>
           </div>
         </div>
 
         <aside class="sidebar">
           <div class="block">
-            <div class="label">Винрейт (круговая + цифры)</div>
-            <div class="block" style="height: 100px; margin: 0; display: flex; align-items: center; justify-content: center">
-              donut
-            </div>
-            <div class="rect rect-sm" style="margin-top: 8px"></div>
+            <div class="label">Винрейт (donut + цифры)</div>
+            <div class="donut">62%</div>
+            <div class="rect rect-sm" style="margin-top:8px"></div>
             <div class="rect rect-sm"></div>
-          </div>
-          <div class="block">
-            <div class="label">Сводка по данным</div>
-            <div class="rect rect-sm"></div>
-            <div class="rect rect-sm"></div>
-          </div>
-          <div class="block">
-            <div class="label">Быстрые действия</div>
-            <div class="rect" style="height: 32px"></div>
-            <div class="rect" style="height: 32px; margin-top: 4px"></div>
           </div>
         </aside>
       </div>
 
-      <div class="row" style="margin-top: 8px; justify-content: center">
+      <div class="row" style="margin-top:8px;justify-content:center">
         <span class="pill">← Предыдущая</span>
         <span class="pill">Стр. N из M</span>
         <span class="pill">Вперёд →</span>
       </div>
+
     </div>
   </body>
 </html>

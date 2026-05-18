@@ -1,12 +1,15 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
+import { validateNewsDateParam } from "@/lib/news-date-param";
 
 export type AdminUserListItem = {
   id: number;
   login: string;
   role: "admin" | "analyst";
   isBlocked: boolean;
+  /** ISO 8601 from `registered_at`. */
+  registeredAt: string;
 };
 
 type UserRow = {
@@ -14,6 +17,7 @@ type UserRow = {
   login: string;
   role: string;
   is_blocked: boolean;
+  registered_at: Date;
 };
 
 function numId(v: string | number): number {
@@ -21,19 +25,50 @@ function numId(v: string | number): number {
   return Number.isFinite(n) ? n : NaN;
 }
 
-export async function listUsersForAdmin(): Promise<AdminUserListItem[]> {
+export type ListUsersForAdminFilters = {
+  registeredFrom?: string;
+  registeredTo?: string;
+};
+
+export async function listUsersForAdmin(
+  filters?: ListUsersForAdminFilters,
+): Promise<AdminUserListItem[]> {
+  const registeredFrom = validateNewsDateParam(filters?.registeredFrom);
+  const registeredTo = validateNewsDateParam(filters?.registeredTo);
+
+  const parts: string[] = [];
+  const params: unknown[] = [];
+  let idx = 1;
+  if (registeredFrom) {
+    parts.push(`(u.registered_at::date) >= $${idx}::date`);
+    params.push(registeredFrom);
+    idx += 1;
+  }
+  if (registeredTo) {
+    parts.push(`(u.registered_at::date) <= $${idx}::date`);
+    params.push(registeredTo);
+    idx += 1;
+  }
+  const where = parts.length > 0 ? `WHERE ${parts.join(" AND ")}` : "";
+
   const r = await sql<UserRow>(
     `
-    SELECT id, login, role, is_blocked
-    FROM users
-    ORDER BY id ASC
+    SELECT u.id, u.login, u.role, u.is_blocked, u.registered_at
+    FROM users u
+    ${where}
+    ORDER BY u.registered_at DESC, u.id ASC
     `,
+    params,
   );
   return r.rows.map((row) => ({
     id: numId(row.id),
     login: row.login,
     role: row.role === "admin" ? "admin" : "analyst",
     isBlocked: row.is_blocked === true,
+    registeredAt:
+      row.registered_at instanceof Date
+        ? row.registered_at.toISOString()
+        : new Date(row.registered_at as unknown as string).toISOString(),
   }));
 }
 

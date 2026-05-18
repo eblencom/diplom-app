@@ -1,11 +1,18 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
+import { CATEGORY_LABELS, isCategorySlug } from "@/lib/company-categories";
 import type {
+  DashboardAdminUserActivity,
   DashboardBestProfitLag,
+  DashboardCategoryPredictCount,
+  DashboardClosedPredictRow,
+  DashboardCompanyNewsCount,
   DashboardCompanyPredictCount,
   DashboardDayPoint,
+  DashboardExportAdminUser,
   DashboardStatsPayload,
+  DashboardUserActivityPoint,
 } from "@/lib/dashboard-types";
 
 // agregaty dashborda po intervalu dat; privyazka k date novosti (news.datetime); admin: vse polzovateli ili odin (userId)
@@ -64,6 +71,17 @@ type CompanyCountRow = {
   cnt: string | null;
 };
 
+type CategoryCountRow = {
+  slug: string;
+  cnt: string | null;
+};
+
+type ActivityDayRow = {
+  d: string;
+  active_users: string | null;
+  predict_count: string | null;
+};
+
 type BestLagRow = {
   lag_minutes: string | null;
   sum_profit: string | null;
@@ -79,6 +97,30 @@ type TotalPredictsRow = {
   c: string | null;
 };
 
+type ClosedPredictRow = {
+  id: string | number;
+  news_date: string;
+  ticker: string;
+  company_name: string;
+  user_login: string;
+  prediction: string;
+  result_percent: string | null;
+  result: string;
+};
+
+type AdminExportUserRow = {
+  id: string | number;
+  login: string;
+  role: string;
+  registered_at: Date;
+  predict_count: string | null;
+};
+
+function numId(v: string | number): number {
+  const n = typeof v === "number" ? v : Number(v);
+  return Number.isFinite(n) ? n : NaN;
+}
+
 function num(v: string | null | undefined): number {
   if (v == null || v === "") {
     return 0;
@@ -93,6 +135,8 @@ export async function getDashboardStats(input: {
   selectedUserId?: number | null;
   from: string;
   to: string;
+  /** Только админ: окно «последние N дней» для графика активности (1–30). */
+  adminActivityWindowDays?: number | null;
 }): Promise<{ ok: true; data: DashboardStatsPayload } | { ok: false; error: string }> {
   // dalee: proverka okna dat, proverka vybrannogo id, nabor SQL, sborka days[] dlya fronta
   const from = parseISODate(input.from.trim());
@@ -208,6 +252,55 @@ export async function getDashboardStats(input: {
     count: num(r.cnt),
   }));
 
+  const byCategory = await sql<CategoryCountRow>(
+    `
+    SELECT cat.slug::text AS slug, COUNT(*)::text AS cnt
+    FROM predicts p
+    INNER JOIN news n ON n.id = p.news_id
+    INNER JOIN companies c ON c.id = n.company_id
+    CROSS JOIN LATERAL unnest(
+      CASE
+        WHEN COALESCE(cardinality(c.category_slugs), 0) > 0 THEN c.category_slugs
+        ELSE ARRAY['__none']::text[]
+      END
+    ) AS cat(slug)
+    WHERE n.datetime >= $1::date
+      AND n.datetime < ($2::date + interval '1 day')
+      AND ($3::boolean OR p.user_id = $4::bigint)
+    GROUP BY cat.slug
+    ORDER BY COUNT(*) DESC, cat.slug ASC
+    `,
+    [from, to, includeAllUsers, uid],
+  );
+  const categoryPredictCounts: DashboardCategoryPredictCount[] = byCategory.rows.map((r) => {
+    const slug = r.slug;
+    const label =
+      slug === "__none"
+        ? "Без категории"
+        : isCategorySlug(slug)
+          ? CATEGORY_LABELS[slug]
+          : slug;
+    return { slug, label, count: num(r.cnt) };
+  });
+
+  const byCompanyNews = await sql<CompanyCountRow>(
+    `
+    SELECT c.ticker, c.name, COUNT(*)::text AS cnt
+    FROM news n
+    INNER JOIN companies c ON c.id = n.company_id
+    WHERE n.datetime >= $1::date
+      AND n.datetime < ($2::date + interval '1 day')
+    GROUP BY c.id, c.ticker, c.name
+    ORDER BY COUNT(*) DESC, c.ticker ASC
+    `,
+    [from, to],
+  );
+  const companyNewsCounts: DashboardCompanyNewsCount[] = byCompanyNews.rows.map((r) => ({
+    ticker: r.ticker,
+    name: r.name,
+    count: num(r.cnt),
+  }));
+
   const bestLagRes = await sql<BestLagRow>(
     `
     SELECT
@@ -298,6 +391,123 @@ export async function getDashboardStats(input: {
     return best;
   }, null);
 
+  let adminUserActivity: DashboardAdminUserActivity | null = null;
+  if (isAdmin) {
+    const rawN =
+      input.adminActivityWindowDays != null && Number.isFinite(input.adminActivityWindowDays)
+        ? Math.round(input.adminActivityWindowDays)
+        : 14;
+    const windowDays = Math.min(30, Math.max(1, rawN));
+
+    const actRes = await sql<ActivityDayRow>(
+      `
+      WITH bounds AS (
+        SELECT (CURRENT_DATE - ($1::int - 1))::date AS d0, CURRENT_DATE::date AS d1
+      ),
+      days AS (
+        SELECT gs::date AS d
+        FROM bounds
+        CROSS JOIN LATERAL generate_series(bounds.d0, bounds.d1, interval '1 day') AS gs
+      )
+      SELECT days.d::text AS d,
+        COALESCE(sub.active_users, 0)::text AS active_users,
+        COALESCE(sub.predict_count, 0)::text AS predict_count
+      FROM days
+      LEFT JOIN (
+        SELECT (n.datetime::date) AS day,
+          COUNT(DISTINCT p.user_id) AS active_users,
+          COUNT(*) AS predict_count
+        FROM predicts p
+        INNER JOIN news n ON n.id = p.news_id
+        CROSS JOIN bounds
+        WHERE n.datetime::date >= bounds.d0
+          AND n.datetime::date <= bounds.d1
+        GROUP BY (n.datetime::date)
+      ) sub ON sub.day = days.d
+      ORDER BY days.d ASC
+      `,
+      [windowDays],
+    );
+    const points: DashboardUserActivityPoint[] = actRes.rows.map((r) => ({
+      date: r.d,
+      activeUsers: num(r.active_users),
+      predictCount: num(r.predict_count),
+    }));
+    adminUserActivity = { windowDays, points };
+  }
+
+  const closedRes = await sql<ClosedPredictRow>(
+    `
+    SELECT
+      p.id,
+      (n.datetime::date)::text AS news_date,
+      c.ticker,
+      c.name AS company_name,
+      u.login AS user_login,
+      p.prediction,
+      p.result_percent::text AS result_percent,
+      p.result
+    FROM predicts p
+    INNER JOIN news n ON n.id = p.news_id
+    INNER JOIN companies c ON c.id = n.company_id
+    INNER JOIN users u ON u.id = p.user_id
+    WHERE n.datetime >= $1::date
+      AND n.datetime < ($2::date + interval '1 day')
+      AND ($3::boolean OR p.user_id = $4::bigint)
+      AND p.status = 'closed'
+      AND p.prediction IN ('positive', 'negative')
+      AND p.result IN ('win', 'lose')
+      AND p.result_percent IS NOT NULL
+    ORDER BY n.datetime DESC, p.id DESC
+    `,
+    [from, to, includeAllUsers, uid],
+  );
+  const closedPredictRows: DashboardClosedPredictRow[] = closedRes.rows.map((r) => ({
+    id: numId(r.id),
+    newsDate: r.news_date,
+    ticker: r.ticker,
+    companyName: r.company_name,
+    userLogin: includeAllUsers ? r.user_login : null,
+    prediction: r.prediction === "negative" ? "negative" : "positive",
+    resultPercent: num(r.result_percent),
+    result: r.result === "lose" ? "lose" : "win",
+  }));
+
+  let adminExportUsers: DashboardExportAdminUser[] | null = null;
+  if (includeAllUsers) {
+    const usersRes = await sql<AdminExportUserRow>(
+      `
+      SELECT
+        u.id,
+        u.login,
+        u.role,
+        u.registered_at,
+        COALESCE(pc.cnt, 0)::text AS predict_count
+      FROM users u
+      LEFT JOIN (
+        SELECT p.user_id, COUNT(*)::bigint AS cnt
+        FROM predicts p
+        INNER JOIN news n ON n.id = p.news_id
+        WHERE n.datetime >= $1::date
+          AND n.datetime < ($2::date + interval '1 day')
+        GROUP BY p.user_id
+      ) pc ON pc.user_id = u.id
+      ORDER BY u.registered_at DESC, u.id ASC
+      `,
+      [from, to],
+    );
+    adminExportUsers = usersRes.rows.map((r) => ({
+      id: numId(r.id),
+      login: r.login,
+      role: r.role === "admin" ? "admin" : "analyst",
+      registeredAt:
+        r.registered_at instanceof Date
+          ? r.registered_at.toISOString()
+          : new Date(r.registered_at as unknown as string).toISOString(),
+      predictCount: num(r.predict_count),
+    }));
+  }
+
   return {
     ok: true,
     data: {
@@ -311,6 +521,8 @@ export async function getDashboardStats(input: {
       totalProfitSum,
       days,
       companyPredictCounts,
+      categoryPredictCounts,
+      companyNewsCounts,
       bestProfitLag,
       visualSummary: {
         totalPredictions,
@@ -323,6 +535,9 @@ export async function getDashboardStats(input: {
             ? { date: busiestDay.date, newsCount: busiestDay.newsCount }
             : null,
       },
+      adminUserActivity,
+      closedPredictRows,
+      adminExportUsers,
     },
   };
 }
