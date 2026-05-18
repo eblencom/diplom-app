@@ -6,6 +6,7 @@ export const CATEGORY_ORDER = [
   "metals",
   "chemistry",
   "retail",
+  "it",
 ] as const;
 
 export type CategorySlug = (typeof CATEGORY_ORDER)[number];
@@ -18,6 +19,7 @@ export const CATEGORY_LABELS: Record<CategorySlug, string> = {
   metals: "Металлы и добыча",
   chemistry: "Химия",
   retail: "Ритейл",
+  it: "IT",
 };
 
 export const TICKER_CATEGORIES: Record<string, readonly CategorySlug[]> = {
@@ -33,6 +35,7 @@ export const TICKER_CATEGORIES: Record<string, readonly CategorySlug[]> = {
   CHMF: ["metals"],
   MAGN: ["metals"],
   MTSS: ["retail"],
+  YNDX: ["it"],
   PHOR: ["chemistry"],
   AKRN: ["chemistry"],
   MGNT: ["retail"],

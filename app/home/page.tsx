@@ -9,14 +9,14 @@ import { TickerTradingViewLink } from "@/app/components/ticker-tradingview-link"
 import { UserWinrateCard } from "@/app/components/user-winrate-card";
 import { CompanyLogo } from "@/app/components/company-logo";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
-import { categoryLabelsForTicker, isCategorySlug } from "@/lib/company-categories";
+import { isCategorySlug } from "@/lib/company-categories";
 import { buildHomeNewsQuery } from "@/lib/home-news-query";
 import { formatDisplayDateTime } from "@/lib/display-date";
 import {
   getUserNewsFavoriteCategorySlugs,
   getUserNewsFavoriteCompanyIds,
 } from "@/lib/news-favorites";
-import { getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
+import { categoryLabelsForSlugs, getCompaniesForNewsFilter, getNewsPage } from "@/lib/news";
 import { validateNewsDateParam } from "@/lib/news-date-param";
 import { getCurrentSession } from "@/lib/session";
 import { startNewsParserScheduler } from "@/lib/news-parser-scheduler";
@@ -189,7 +189,7 @@ export default async function HomePage({ searchParams }: HomePageProps) {
                   const paragraphs = splitParagraphs(item.text);
                   const firstParagraph = paragraphs[0] ?? item.text;
                   const restParagraphs = paragraphs.slice(1);
-                  const categoryTags = categoryLabelsForTicker(item.ticker);
+                  const categoryTags = categoryLabelsForSlugs(item.categorySlugs);
 
                   return (
                     <>

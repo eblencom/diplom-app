@@ -1,7 +1,7 @@
 import "server-only";
 
 import { sql } from "@/lib/db";
-import { isCategorySlug, type CategorySlug } from "@/lib/company-categories";
+import { CATEGORY_LABELS, isCategorySlug, type CategorySlug } from "@/lib/company-categories";
 import { getFavoritesWhereSql } from "@/lib/news-favorites";
 import { rowToUserPredictOnNews, type PredictRowFields } from "@/lib/predict-row-to-view";
 
@@ -18,6 +18,7 @@ export type NewsItem = {
   companyId: number;
   companyName: string;
   ticker: string;
+  categorySlugs: CategorySlug[];
   predicts: UserPredictOnNews[];
 };
 
@@ -29,6 +30,7 @@ type NewsRow = {
   company_name: string;
   ticker: string;
   prices_path: string | null;
+  category_slugs: string[] | null;
 };
 
 type PredictRow = PredictRowFields & { news_id: number | string };
@@ -109,6 +111,10 @@ function parseCompanyCategorySlugs(raw: string[] | null | undefined): CategorySl
     }
   }
   return out;
+}
+
+export function categoryLabelsForSlugs(slugs: readonly CategorySlug[]): string[] {
+  return slugs.map((slug) => CATEGORY_LABELS[slug]);
 }
 
 export type NewsPreviewPublic = {
@@ -265,7 +271,8 @@ export async function getNewsPage(
         c.id AS company_id,
         c.name AS company_name,
         c.ticker,
-        c.prices_path
+        c.prices_path,
+        c.category_slugs
       FROM news n
       INNER JOIN companies c ON c.id = n.company_id
       ${clause}
@@ -284,6 +291,7 @@ export async function getNewsPage(
     companyName: row.company_name,
     ticker: row.ticker,
     pricesPath: row.prices_path,
+    categorySlugs: parseCompanyCategorySlugs(row.category_slugs),
   }));
 
   if (!userId || baseItems.length === 0) {

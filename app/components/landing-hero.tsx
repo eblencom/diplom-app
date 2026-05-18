@@ -49,7 +49,7 @@ export function LandingHero({ issuersCount }: LandingHeroProps) {
             <p className="mt-5 flex max-w-xl flex-col items-start gap-2 text-sm text-white/68 sm:flex-row sm:flex-wrap sm:gap-x-3 sm:gap-y-1 sm:text-base">
               <span className="inline-flex flex-wrap items-center gap-x-1">
                 <span className="font-mono font-semibold tabular-nums text-white/90">{issuersCount}</span>
-                <span>эмитентов</span>
+                <span>компаний</span>
               </span>
               <span className="hidden text-white/25 sm:inline" aria-hidden>
                 ·

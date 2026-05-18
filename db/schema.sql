@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS companies (
   news_link TEXT,
   price_link TEXT,
   prices_path TEXT,
+  logo_path TEXT,
   category_slugs TEXT[] NOT NULL DEFAULT '{}'::text[]
 );
 

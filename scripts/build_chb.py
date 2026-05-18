@@ -62,7 +62,7 @@ def shell(title: str, route: str, body: str) -> str:
 HOME = f"""
 {header("home")}
       {D} class="ticker-strip">
-        {D} class="label" style="border: none; margin: 0">Бегущая строка котировок{CD}
+        {D} class="label" style="border: none; margin: 0">Бегущая строка цен{CD}
       {CD}
 
       {D} class="block">

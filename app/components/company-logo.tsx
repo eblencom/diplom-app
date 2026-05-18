@@ -7,7 +7,7 @@ type Props = {
   className?: string;
 };
 
-const LOGO_VERSION = "2";
+const LOGO_VERSION = "3";
 
 export function CompanyLogo({ ticker, name, size = 24, className = "" }: Props) {
   const safeTicker = ticker.trim().toUpperCase();

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { AppHeader } from "@/app/components/app-header";
+import { AdminCompaniesPanel } from "@/app/components/admin-companies-panel";
 import { AdminUsersPanel } from "@/app/components/admin-users-panel";
 import { APP_CONTENT_MAX_CLASS } from "@/lib/app-layout";
 import { getCurrentSession } from "@/lib/session";
@@ -24,9 +25,16 @@ export default async function AdminPage() {
         <div className="rounded-2xl border border-white/15 bg-[#0f0a35]/65 p-5 shadow-[0_20px_80px_rgba(90,24,255,0.25)] backdrop-blur-xl sm:p-7">
           <h1 className="text-4xl font-semibold sm:text-5xl">Панель администратора</h1>
           <p className="mt-2 text-base text-white/60">
-            Учётные записи: блокировка, разблокировка и удаление аналитиков.
+            Учётные записи и компании: управление доступом, компаниями и логотипами.
           </p>
           <div className="mt-6 sm:mt-8">
+            <Suspense
+              fallback={<div className="h-48 animate-pulse rounded-2xl bg-white/5" aria-hidden />}
+            >
+              <AdminCompaniesPanel />
+            </Suspense>
+          </div>
+          <div className="mt-5 sm:mt-6">
             <Suspense
               fallback={<div className="h-48 animate-pulse rounded-2xl bg-white/5" aria-hidden />}
             >

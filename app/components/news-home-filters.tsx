@@ -205,7 +205,7 @@ function CompanyDropdown({
             type="text"
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Поиск: название или тикер"
+            placeholder="Поиск: название или код цены"
             autoComplete="off"
             aria-label="Поиск компании"
             className={

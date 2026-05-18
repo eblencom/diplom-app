@@ -127,7 +127,7 @@ function xlSetRangeStyle(
 }
 
 function buildPredictHeader(scopeAll: boolean): string[] {
-  const h = ["№", "Дата новости", "Тикер", "Компания"];
+  const h = ["№", "Дата новости", "Цены", "Компания"];
   if (scopeAll) {
     h.push("Пользователь");
   }
@@ -468,8 +468,8 @@ function pdfPredictColumns(scopeAll: boolean): PdfColumn[] {
     ? [12, 25, 20, 78, 42, 32, 29, 35]
     : [12, 27, 22, 110, 36, 31, 35];
   const labels = scopeAll
-    ? ["№", "Дата", "Тикер", "Компания", "Пользователь", "Прогноз", "Изм., %", "Исход"]
-    : ["№", "Дата", "Тикер", "Компания", "Прогноз", "Изм., %", "Исход"];
+    ? ["№", "Дата", "Цены", "Компания", "Пользователь", "Прогноз", "Изм., %", "Исход"]
+    : ["№", "Дата", "Цены", "Компания", "Прогноз", "Изм., %", "Исход"];
   const align: PdfAlign[] = scopeAll
     ? ["center", "center", "center", "left", "left", "center", "right", "center"]
     : ["center", "center", "center", "left", "center", "right", "center"];

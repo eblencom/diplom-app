@@ -179,7 +179,7 @@ export function ProfileTelegramPreferences({
       <form onSubmit={onSaveAlerts} className="rounded-2xl border border-white/12 bg-black/25 p-5 sm:p-6">
         <h3 className="text-2xl font-medium text-white">Цены для рассылки в Telegram</h3>
         <p className="mt-2 text-base leading-relaxed text-white/60">
-          Отметьте компании: цены MOEX и новости по этим эмитентам будут приходить через
+          Отметьте компании: цены MOEX и новости по этим компаниям будут приходить через
           выбранный интервал.
         </p>
         <label className="mt-5 flex max-w-md flex-col gap-2 text-base text-white/70">
