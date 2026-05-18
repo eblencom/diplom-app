@@ -57,16 +57,18 @@ function MetricCard({
   value,
   note,
   className = "border-white/10 bg-white/5",
+  valueClassName = "text-white",
 }: {
   title: string;
   value: number;
   note: string;
   className?: string;
+  valueClassName?: string;
 }) {
   return (
     <div className={`rounded-xl border px-4 py-4 ${className}`}>
       <p className="text-sm font-medium uppercase tracking-wide text-white/65">{title}</p>
-      <p className="mt-1 font-mono text-3xl font-semibold tabular-nums text-white sm:text-4xl">
+      <p className={`mt-1 font-mono text-3xl font-semibold tabular-nums sm:text-4xl ${valueClassName}`}>
         {formatSignedPercent(value)}%
       </p>
       <p className="mt-1 text-sm leading-snug text-white/55">{note}</p>
@@ -359,6 +361,13 @@ export function DashboardClient({ isAdmin }: Props) {
                   title="Общее настроение на рынке"
                   value={stats.totalResultPercentSum}
                   note="Сумма процентного изменения цен по закрытым прогнозам"
+                  valueClassName={
+                    stats.totalResultPercentSum < 0
+                      ? "text-rose-300"
+                      : stats.totalResultPercentSum > 0
+                        ? "text-emerald-300"
+                        : "text-white"
+                  }
                 />
                 <MetricCard
                   title="Результативность %"

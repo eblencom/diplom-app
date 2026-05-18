@@ -39,6 +39,10 @@ export type CreateCompanyResult =
   | { ok: true; company: AdminCompanyListItem }
   | { ok: false; status: 400 | 409; message: string };
 
+export type DeleteCompanyResult =
+  | { ok: true; company: AdminCompanyListItem }
+  | { ok: false; status: 400 | 404; message: string };
+
 type PgErrorLike = {
   code?: string;
   constraint?: string;
@@ -198,6 +202,26 @@ export async function createCompany(input: CreateCompanyInput): Promise<CreateCo
     }
     throw e;
   }
+}
+
+export async function deleteCompanyByAdmin(companyId: number): Promise<DeleteCompanyResult> {
+  if (!Number.isFinite(companyId) || companyId < 1) {
+    return { ok: false, status: 400, message: "Некорректный ID компании." };
+  }
+
+  const result = await sql<CompanyRow>(
+    `
+    DELETE FROM companies
+    WHERE id = $1
+    RETURNING id, name, ticker, news_link, price_link, prices_path, logo_path, category_slugs
+    `,
+    [Math.round(companyId)],
+  );
+  const row = result.rows[0];
+  if (!row) {
+    return { ok: false, status: 404, message: "Компания не найдена." };
+  }
+  return { ok: true, company: mapCompanyRow(row) };
 }
 
 export function companyCategoryLabel(slug: CategorySlug): string {

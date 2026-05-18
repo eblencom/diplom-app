@@ -26,6 +26,7 @@ export function AdminCompaniesPanel() {
   const [success, setSuccess] = useState<string | null>(null);
   const [listPending, setListPending] = useState(true);
   const [submitPending, setSubmitPending] = useState(false);
+  const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
   const [selectedCategories, setSelectedCategories] = useState<Set<CategorySlug>>(new Set());
   const [logoFileName, setLogoFileName] = useState("");
 
@@ -102,6 +103,36 @@ export function AdminCompaniesPanel() {
       setError("Сеть недоступна.");
     } finally {
       setSubmitPending(false);
+    }
+  };
+
+  const deleteCompany = async (company: AdminCompanyRow) => {
+    const confirmed = window.confirm(
+      `Удалить компанию «${company.name}»? Связанные новости и прогнозы также будут удалены.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    setError(null);
+    setSuccess(null);
+    setDeletePendingId(company.id);
+    try {
+      const res = await fetch(`/api/admin/companies/${company.id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error ?? "Не удалось удалить компанию");
+        return;
+      }
+      setSuccess(`Компания «${company.name}» удалена.`);
+      await load();
+    } catch {
+      setError("Сеть недоступна.");
+    } finally {
+      setDeletePendingId(null);
     }
   };
 
@@ -207,7 +238,7 @@ export function AdminCompaniesPanel() {
 
       {companies && companies.length > 0 ? (
         <div className="mt-5 overflow-x-auto rounded-xl border border-white/10">
-          <table className="w-full min-w-[920px] border-collapse text-left text-sm text-white/90">
+          <table className="w-full min-w-[1020px] border-collapse text-left text-sm text-white/90">
             <thead>
               <tr className="border-b border-white/10 bg-white/[0.06] text-xs uppercase tracking-wide text-white/50">
                 <th className="px-4 py-3 font-medium">Компания</th>
@@ -215,6 +246,7 @@ export function AdminCompaniesPanel() {
                 <th className="px-4 py-3 font-medium">Категории</th>
                 <th className="px-4 py-3 font-medium">Файл цен</th>
                 <th className="px-4 py-3 font-medium">Ссылки</th>
+                <th className="px-4 py-3 font-medium">Удаление</th>
               </tr>
             </thead>
             <tbody>
@@ -265,6 +297,16 @@ export function AdminCompaniesPanel() {
                       ) : null}
                       {!company.newsLink && !company.priceLink ? <span className="text-white/35">—</span> : null}
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      disabled={deletePendingId === company.id || submitPending}
+                      onClick={() => void deleteCompany(company)}
+                      className="rounded-full border border-red-400/45 bg-red-900/35 px-3 py-1.5 text-xs font-semibold text-red-100 transition hover:bg-red-900/55 disabled:opacity-50"
+                    >
+                      {deletePendingId === company.id ? "…" : "Удалить"}
+                    </button>
                   </td>
                 </tr>
               ))}
